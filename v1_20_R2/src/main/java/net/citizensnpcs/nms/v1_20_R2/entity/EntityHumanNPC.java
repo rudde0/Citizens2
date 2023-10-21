@@ -127,6 +127,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
                 : ai.getMoveControl().hasWanted());
 
         if (!navigating && getBukkitEntity() != null
+                && !getBukkitEntity().isOnGround()
                 && (!npc.hasTrait(Gravity.class) || npc.getOrAddTrait(Gravity.class).hasGravity())
                 && Util.isLoaded(getBukkitEntity().getLocation())
                 && (!npc.isProtected() || SpigotUtil.checkYSafe(getY(), getBukkitEntity().getWorld()))) {
@@ -289,6 +290,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         xxa *= 0.98F;
         zza *= 0.98F;
         moveWithFallDamage(new Vec3(this.xxa, this.yya, this.zza));
+        //System.out.println("[moveOnCurrentHeading] Traveller: " + npc.getName() + " to location: " + npc.getNavigator().getTargetAsLocation());
         NMS.setHeadYaw(getBukkitEntity(), getYRot() + 1.5f);
         if (jumpTicks > 0) {
             jumpTicks--;
@@ -300,6 +302,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         double y = getY();
         double z = getZ();
         travel(vec);
+        //System.out.println("[moveWithFallDamage] npc: " + npc.getName() + " event-location: " + getX() + " " + getY() + " " + getZ());
         if (!npc.isProtected()) {
             doCheckFallDamage(getX() - x, getY() - y, getZ() - z, onGround);
         }
