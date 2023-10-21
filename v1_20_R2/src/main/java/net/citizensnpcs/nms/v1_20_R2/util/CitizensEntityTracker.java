@@ -91,12 +91,13 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
         }, Setting.TABLIST_REMOVE_PACKET_DELAY.asTicks());
     }
 
+    /*
     @Override
     public void updatePlayer(final ServerPlayer entityplayer) {
-        if (entityplayer instanceof EntityHumanNPC)
+        if (entityplayer instanceof EntityHumanNPC || tracker.isRemoved() || !(tracker instanceof NPCHolder))
             return;
 
-        if (!tracker.isRemoved() && !seenBy.contains(entityplayer.connection) && tracker instanceof NPCHolder) {
+        if (seenBy.contains(entityplayer.connection)) {
             NPC npc = ((NPCHolder) tracker).getNPC();
             if (REQUIRES_SYNC == null) {
                 REQUIRES_SYNC = !Bukkit.isPrimaryThread();
@@ -130,6 +131,8 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
 
         super.updatePlayer(entityplayer);
     }
+    */
+
 
     private static int getUpdateInterval(TrackedEntity entry) {
         try {

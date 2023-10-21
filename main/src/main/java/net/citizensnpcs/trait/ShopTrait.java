@@ -377,12 +377,8 @@ public class ShopTrait extends Trait {
             }
             if (!meta.hasLore()) {
                 List<String> lore = Lists.newArrayList();
-                cost.forEach(c -> lore.add(c.describe()));
-                result.forEach(r -> {
-                    if (!(r instanceof CommandAction)) {
-                        lore.add(r.describe());
-                    }
-                });
+                cost.forEach(a -> lore.add(a.describe()));
+                result.forEach(a -> lore.add(a.describe()));
                 if (timesPurchasable > 0) {
                     lore.add("Times purchasable: " + timesPurchasable);
                 }

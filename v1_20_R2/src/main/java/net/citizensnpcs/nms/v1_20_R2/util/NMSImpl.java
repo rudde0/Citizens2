@@ -1155,7 +1155,6 @@ public class NMSImpl implements NMSBridge {
         ClientboundPlayerInfoUpdatePacket packet = (ClientboundPlayerInfoUpdatePacket) raw;
         List<ClientboundPlayerInfoUpdatePacket.Entry> list = Lists.newArrayList(packet.entries());
         boolean changed = false;
-        GameProfile playerProfile = null;
         for (int i = 0; i < list.size(); i++) {
             ClientboundPlayerInfoUpdatePacket.Entry npcInfo = list.get(i);
             if (npcInfo == null)
@@ -1165,7 +1164,6 @@ public class NMSImpl implements NMSBridge {
             if (trait == null || !trait.isMirroring(player)) {
                 continue;
             }
-
             if (Setting.DISABLE_TABLIST.asBoolean() != npcInfo.listed()) {
                 list.set(i,
                         new ClientboundPlayerInfoUpdatePacket.Entry(npcInfo.profileId(), npcInfo.profile(),
@@ -1174,11 +1172,7 @@ public class NMSImpl implements NMSBridge {
                                 npcInfo.chatSession()));
                 changed = true;
             }
-
-            if (playerProfile == null) {
-                playerProfile = NMS.getProfile(player);
-            }
-
+            GameProfile playerProfile = NMS.getProfile(player);
             if (trait.mirrorName()) {
                 list.set(i,
                         new ClientboundPlayerInfoUpdatePacket.Entry(npcInfo.profileId(), playerProfile,
@@ -1187,19 +1181,15 @@ public class NMSImpl implements NMSBridge {
                 changed = true;
                 continue;
             }
-
             Collection<Property> textures = playerProfile.getProperties().get("textures");
             if (textures == null || textures.size() == 0)
                 continue;
-
             npcInfo.profile().getProperties().clear();
             for (String key : playerProfile.getProperties().keySet()) {
                 npcInfo.profile().getProperties().putAll(key, playerProfile.getProperties().get(key));
             }
-
             changed = true;
         }
-
         if (changed) {
             try {
                 PLAYER_INFO_ENTRIES_LIST.invoke(packet, list);

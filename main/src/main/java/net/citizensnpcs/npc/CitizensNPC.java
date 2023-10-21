@@ -100,11 +100,6 @@ public class CitizensNPC extends AbstractNPC {
             data().remove("selectors");
         }
 
-        if (getEntity() != null) {
-            getEntity().removeMetadata("NPC", CitizensAPI.getPlugin());
-            getEntity().removeMetadata("NPC-ID", CitizensAPI.getPlugin());
-        }
-
         if (getEntity() instanceof Player) {
             PlayerUpdateTask.deregisterPlayer(getEntity());
         }
@@ -112,7 +107,10 @@ public class CitizensNPC extends AbstractNPC {
         navigator.onDespawn();
         if (reason == DespawnReason.RELOAD) {
             unloadEvents();
-        }
+        }/* else if (getEntity() != null) {
+                getEntity().removeMetadata("NPC", CitizensAPI.getPlugin());
+                getEntity().removeMetadata("NPC-ID", CitizensAPI.getPlugin());
+        }*/
 
         for (Trait trait : new ArrayList<Trait>(traits.values())) {
             trait.onDespawn(reason);

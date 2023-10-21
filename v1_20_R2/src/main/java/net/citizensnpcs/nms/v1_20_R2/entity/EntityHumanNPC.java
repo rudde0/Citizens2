@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_20_R2.CraftServer;
 import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -120,7 +121,11 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         }
 
         super.baseTick();
-        boolean navigating = npc.getNavigator().isNavigating() || ai.getMoveControl().hasWanted();
+        boolean navigating = (npc.getNavigator().isNavigating() ?
+                npc.getNavigator().getTargetAsLocation().distance(npc.getEntity().getLocation())
+                > npc.getNavigator().getDefaultParameters().pathDistanceMargin()
+                : ai.getMoveControl().hasWanted());
+
         if (!navigating && getBukkitEntity() != null
                 && (!npc.hasTrait(Gravity.class) || npc.getOrAddTrait(Gravity.class).hasGravity())
                 && Util.isLoaded(getBukkitEntity().getLocation())
@@ -284,7 +289,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         xxa *= 0.98F;
         zza *= 0.98F;
         moveWithFallDamage(new Vec3(this.xxa, this.yya, this.zza));
-        NMS.setHeadYaw(getBukkitEntity(), getYRot());
+        NMS.setHeadYaw(getBukkitEntity(), getYRot() + 1.5f);
         if (jumpTicks > 0) {
             jumpTicks--;
         }
@@ -374,9 +379,9 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
     public void travel(Vec3 vec3d) {
         if (npc == null || !npc.isFlyable()) {
             super.travel(vec3d);
-        } else {
-            NMSImpl.flyingMoveLogic(this, vec3d);
+            return;
         }
+        NMSImpl.flyingMoveLogic(this, vec3d);
     }
 
     @Override
@@ -407,7 +412,8 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
         @Override
         public boolean canSee(org.bukkit.entity.Entity entity) {
-            if (entity != null && entity.getType().name().contains("ITEM_FRAME")) {
+            if (entity != null && (entity.getType().equals(EntityType.ITEM_FRAME)
+                    || entity.getType().equals(EntityType.GLOW_ITEM_FRAME))) {
                 return false; // optimise for large maps in item frames
             }
             return super.canSee(entity);

@@ -33,7 +33,7 @@ public class RotationTrait extends Trait {
     @Persist(reify = true)
     private final RotationParams globalParameters = new RotationParams();
     private final RotationSession globalSession = new RotationSession(globalParameters);
-    private final List<PacketRotationSession> packetSessions = Lists.newCopyOnWriteArrayList();
+    private final List<PacketRotationSession> packetSessions = Lists.newArrayList();
     private final Map<UUID, PacketRotationSession> packetSessionsByUUID = Maps.newConcurrentMap();
 
     public RotationTrait() {
@@ -60,7 +60,6 @@ public class RotationTrait extends Trait {
         } else {
             packetSessions.add(lrs);
         }
-
         return lrs;
     }
 
@@ -80,13 +79,11 @@ public class RotationTrait extends Trait {
         PacketRotationSession lrs = packetSessionsByUUID.get(player.getUniqueId());
         if (lrs != null && lrs.triple != null)
             return lrs;
-
         for (PacketRotationSession session : packetSessions) {
             if (session.accepts(player) && session.triple != null) {
                 return session;
             }
         }
-
         return null;
     }
 
@@ -98,7 +95,6 @@ public class RotationTrait extends Trait {
     public void run() {
         if (!npc.isSpawned())
             return;
-
         if (npc.data().get(NPC.Metadata.RESET_PITCH_ON_TICK, false)) {
             NMS.setPitch(npc.getEntity(), 0);
         }
@@ -184,7 +180,6 @@ public class RotationTrait extends Trait {
         public void onPacketOverwritten() {
             if (triple == null)
                 return;
-
             triple.record();
         }
 
@@ -229,7 +224,7 @@ public class RotationTrait extends Trait {
         private boolean linkedBody;
         private float maxPitchPerTick = 10;
         private float maxYawPerTick = 40;
-        private volatile boolean persist = false;
+        private boolean persist = false;
         private float[] pitchRange = { -180, 180 };
         private List<UUID> uuidFilter;
         private float[] yawRange = { -180, 180 };
@@ -388,7 +383,7 @@ public class RotationTrait extends Trait {
 
     public class RotationSession {
         private final RotationParams params;
-        private volatile int t = -1;
+        private int t = -1;
         private Supplier<Float> targetPitch = () -> 0F;
         private Supplier<Float> targetYaw = targetPitch;
 

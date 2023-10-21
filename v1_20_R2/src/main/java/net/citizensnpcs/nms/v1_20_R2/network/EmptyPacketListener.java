@@ -14,10 +14,6 @@ public class EmptyPacketListener extends ServerGamePacketListenerImpl {
     }
 
     @Override
-    public void resumeFlushing() {
-    }
-
-    @Override
     public void send(Packet<?> packet) {
     }
 }
