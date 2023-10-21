@@ -127,9 +127,9 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
                 : ai.getMoveControl().hasWanted());
 
         if (!navigating && getBukkitEntity() != null
+                && Util.isLoaded(getBukkitEntity().getLocation())
                 && !getBukkitEntity().isOnGround()
                 && (!npc.hasTrait(Gravity.class) || npc.getOrAddTrait(Gravity.class).hasGravity())
-                && Util.isLoaded(getBukkitEntity().getLocation())
                 && (!npc.isProtected() || SpigotUtil.checkYSafe(getY(), getBukkitEntity().getWorld()))) {
             moveWithFallDamage(Vec3.ZERO);
         }
@@ -290,7 +290,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         xxa *= 0.98F;
         zza *= 0.98F;
         moveWithFallDamage(new Vec3(this.xxa, this.yya, this.zza));
-        //System.out.println("[moveOnCurrentHeading] Traveller: " + npc.getName() + " to location: " + npc.getNavigator().getTargetAsLocation());
+        //System.out.println("[moveOnCurrentHeading] NPC: " + npc.getName() + " to location: " + npc.getNavigator().getTargetAsLocation());
         NMS.setHeadYaw(getBukkitEntity(), getYRot() + 1.5f);
         if (jumpTicks > 0) {
             jumpTicks--;
@@ -415,8 +415,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
         @Override
         public boolean canSee(org.bukkit.entity.Entity entity) {
-            if (entity != null && (entity.getType().equals(EntityType.ITEM_FRAME)
-                    || entity.getType().equals(EntityType.GLOW_ITEM_FRAME))) {
+            if (entity != null && (entity.getType().toString().contains("ITEM_FRAME"))) {
                 return false; // optimise for large maps in item frames
             }
             return super.canSee(entity);
