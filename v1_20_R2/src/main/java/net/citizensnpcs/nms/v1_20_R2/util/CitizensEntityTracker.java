@@ -11,12 +11,9 @@ import com.google.common.collect.ForwardingSet;
 
 import net.citizensnpcs.Settings.Setting;
 import net.citizensnpcs.api.CitizensAPI;
-import net.citizensnpcs.api.event.NPCSeenByPlayerEvent;
 import net.citizensnpcs.api.npc.NPC;
-import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.util.NMS;
-import net.citizensnpcs.util.Util;
 import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.server.level.ChunkMap;
@@ -133,7 +130,6 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
     }
     */
 
-
     private static int getUpdateInterval(TrackedEntity entry) {
         try {
             return (int) UPDATE_INTERVAL.invoke(TRACKER_ENTRY.invoke(entry));
@@ -172,7 +168,6 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
 
     private static final MethodHandle UPDATE_INTERVAL = NMS.getGetter(ServerEntity.class, "h");
     private static final MethodHandle TRACK_DELTA = NMS.getGetter(ServerEntity.class, "i");
-    private static volatile Boolean REQUIRES_SYNC;
     private static final MethodHandle TRACKER = NMS.getFirstGetter(TrackedEntity.class, Entity.class);
     private static final MethodHandle TRACKER_ENTRY = NMS.getFirstGetter(TrackedEntity.class, ServerEntity.class);
     private static final MethodHandle TRACKING_RANGE = NMS.getFirstGetter(TrackedEntity.class, int.class);
