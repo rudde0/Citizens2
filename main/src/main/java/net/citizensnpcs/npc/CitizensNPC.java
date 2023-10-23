@@ -189,7 +189,6 @@ public class CitizensNPC extends AbstractNPC {
     @Override
     public void load(final DataKey root) {
         super.load(root);
-        // Spawn the NPC
         CurrentLocation spawnLocation = getOrAddTrait(CurrentLocation.class);
         if (getOrAddTrait(Spawned.class).shouldSpawn() && spawnLocation.getLocation() != null) {
             if (spawnLocation.getLocation() != null) {
@@ -600,6 +599,8 @@ public class CitizensNPC extends AbstractNPC {
     }
 
     private void updateFlyableState() {
+        if (!CitizensAPI.hasImplementation())
+            return;
         EntityType type = isSpawned() ? getEntity().getType() : getOrAddTrait(MobType.class).getType();
         if (type == null)
             return;

@@ -130,15 +130,6 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
     }
     */
 
-    private static int getUpdateInterval(TrackedEntity entry) {
-        try {
-            return (int) UPDATE_INTERVAL.invoke(TRACKER_ENTRY.invoke(entry));
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
     private static boolean getTrackDelta(TrackedEntity entry) {
         try {
             return (boolean) TRACK_DELTA.invoke(TRACKER_ENTRY.invoke(entry));
@@ -166,12 +157,21 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
         return 0;
     }
 
-    private static final MethodHandle UPDATE_INTERVAL = NMS.getGetter(ServerEntity.class, "h");
+    private static int getUpdateInterval(TrackedEntity entry) {
+        try {
+            return (int) UPDATE_INTERVAL.invoke(TRACKER_ENTRY.invoke(entry));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     private static final MethodHandle TRACK_DELTA = NMS.getGetter(ServerEntity.class, "i");
     private static final MethodHandle TRACKER = NMS.getFirstGetter(TrackedEntity.class, Entity.class);
     private static final MethodHandle TRACKER_ENTRY = NMS.getFirstGetter(TrackedEntity.class, ServerEntity.class);
     private static final MethodHandle TRACKING_RANGE = NMS.getFirstGetter(TrackedEntity.class, int.class);
-    private static final MethodHandle TRACKING_RANGE_SETTER = NMS.getFirstFinalSetter(TrackedEntity.class, int.class);
+    //private static final MethodHandle TRACKING_RANGE_SETTER = NMS.getFirstFinalSetter(TrackedEntity.class, int.class);
     private static final MethodHandle TRACKING_SET_GETTER = NMS.getFirstGetter(TrackedEntity.class, Set.class);
     private static final MethodHandle TRACKING_SET_SETTER = NMS.getFirstFinalSetter(TrackedEntity.class, Set.class);
+    private static final MethodHandle UPDATE_INTERVAL = NMS.getGetter(ServerEntity.class, "h");
 }

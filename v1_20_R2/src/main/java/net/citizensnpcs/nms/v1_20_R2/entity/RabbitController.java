@@ -208,9 +208,9 @@ public class RabbitController extends MobEntityController {
         @Override
         public void setVariant(Variant variant) {
             if (npc != null) {
-                if (NMSImpl.getRabbitTypeField() == null)
+                if (NMSImpl.RABBIT_TYPE_DATAWATCHER == null)
                     return;
-                this.entityData.set(NMSImpl.getRabbitTypeField(), variant.id());
+                this.entityData.set(NMSImpl.RABBIT_TYPE_DATAWATCHER, variant.id());
                 return;
             }
             super.setVariant(variant);
