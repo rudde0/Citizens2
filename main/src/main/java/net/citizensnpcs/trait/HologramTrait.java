@@ -38,6 +38,7 @@ import net.citizensnpcs.util.Util;
 /**
  * Persists a hologram attached to the NPC.
  */
+// TODO: refactor this class and remove HologramDirection
 @TraitName("hologramtrait")
 public class HologramTrait extends Trait {
     private Location currentLoc;
@@ -307,10 +308,12 @@ public class HologramTrait extends Trait {
                 || currentLoc.getWorld() != npcLoc.getWorld() || currentLoc.distance(npcLoc) >= 0.001
                 || lastNameplateVisible != nameplateVisible || Math.abs(lastEntityHeight - getEntityHeight()) >= 0.05;
         boolean updateName = false;
+
         if (t++ >= Setting.HOLOGRAM_UPDATE_RATE.asTicks() + Util.getFastRandom().nextInt(3) /* add some jitter */) {
             t = 0;
             updateName = true;
         }
+
         lastNameplateVisible = nameplateVisible;
 
         if (updatePosition) {
@@ -324,7 +327,7 @@ public class HologramTrait extends Trait {
             }
 
             if (useDisplayEntities && nameLine.hologram.getEntity().getVehicle() == null) {
-                NMS.updateMountedInteractionHeight(nameLine.hologram.getEntity(), npc.getEntity(), 0);
+                npc.getEntity().addPassenger(nameLine.hologram.getEntity());
             }
 
             if (updateName) {
@@ -335,6 +338,7 @@ public class HologramTrait extends Trait {
         for (int i = 0; i < lines.size(); i++) {
             HologramLine line = lines.get(i);
             NPC hologramNPC = line.hologram;
+
             if (hologramNPC == null || !hologramNPC.isSpawned())
                 continue;
 
@@ -351,8 +355,7 @@ public class HologramTrait extends Trait {
             }
 
             if (useDisplayEntities && hologramNPC.getEntity().getVehicle() == null) {
-                NMS.updateMountedInteractionHeight(hologramNPC.getEntity(), npc.getEntity(),
-                        (direction == HologramDirection.BOTTOM_UP ? getHeight(i) : getMaxHeight() - getHeight(i)));
+                npc.getEntity().addPassenger(hologramNPC.getEntity());
             }
 
             String text = line.text;
@@ -442,6 +445,7 @@ public class HologramTrait extends Trait {
         } else if (type.equalsIgnoreCase("bottom")) {
             lines.get(idx).mb = margin;
         }
+
         reloadLineHolograms();
     }
 

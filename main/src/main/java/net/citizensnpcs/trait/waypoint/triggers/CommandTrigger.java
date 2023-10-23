@@ -19,7 +19,7 @@ public class CommandTrigger implements WaypointTrigger {
     }
 
     public CommandTrigger(Collection<String> commands) {
-        this.commands = commands;
+        this.commands = Lists.newArrayList(commands);
     }
 
     @Override

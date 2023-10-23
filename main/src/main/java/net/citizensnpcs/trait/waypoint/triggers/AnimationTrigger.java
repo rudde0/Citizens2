@@ -38,9 +38,11 @@ public class AnimationTrigger implements WaypointTrigger {
     public void onWaypointReached(NPC npc, Location waypoint) {
         if (npc.getEntity().getType() != EntityType.PLAYER)
             return;
+
         if (at != null) {
             npc.teleport(at, TeleportCause.PLUGIN);
         }
+
         Player player = (Player) npc.getEntity();
         for (PlayerAnimation animation : animations) {
             animation.play(player);

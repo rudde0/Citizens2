@@ -287,6 +287,7 @@ public class EventListen implements Listener {
             }
             return;
         }
+
         if (event instanceof EntityDamageByEntityEvent) {
             NPCDamageByEntityEvent damageEvent = new NPCDamageByEntityEvent(npc, (EntityDamageByEntityEvent) event);
             Bukkit.getPluginManager().callEvent(damageEvent);
@@ -435,6 +436,7 @@ public class EventListen implements Listener {
         if (npc.hasTrait(ClickRedirectTrait.class)) {
             npc = npc.getOrAddTrait(ClickRedirectTrait.class).getRedirectNPC();
         }
+
         if (npc.hasTrait(PlayerFilter.class)) {
             event.setCancelled(npc.getOrAddTrait(PlayerFilter.class).onSeenByPlayer(event.getPlayer()));
         }
