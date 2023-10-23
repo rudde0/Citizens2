@@ -11,12 +11,12 @@ import com.google.common.collect.ForwardingSet;
 
 import net.citizensnpcs.Settings.Setting;
 import net.citizensnpcs.api.CitizensAPI;
-import net.citizensnpcs.api.event.NPCSeenByPlayerEvent;
+//import net.citizensnpcs.api.event.NPCSeenByPlayerEvent;
 import net.citizensnpcs.api.npc.NPC;
-import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
+//import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.util.NMS;
-import net.citizensnpcs.util.Util;
+//import net.citizensnpcs.util.Util;
 import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.server.level.ChunkMap;
@@ -91,6 +91,7 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
         }, Setting.TABLIST_REMOVE_PACKET_DELAY.asTicks());
     }
 
+    /*
     @Override
     public void updatePlayer(final ServerPlayer entityplayer) {
         if (entityplayer instanceof EntityHumanNPC)
@@ -133,6 +134,7 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
 
         super.updatePlayer(entityplayer);
     }
+     */
 
     private static boolean getTrackDelta(TrackedEntity entry) {
         try {
@@ -170,12 +172,12 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
         return 0;
     }
 
-    private static volatile Boolean REQUIRES_SYNC;
+    //private static volatile Boolean REQUIRES_SYNC;
     private static final MethodHandle TRACK_DELTA = NMS.getGetter(ServerEntity.class, "i");
     private static final MethodHandle TRACKER = NMS.getFirstGetter(TrackedEntity.class, Entity.class);
     private static final MethodHandle TRACKER_ENTRY = NMS.getFirstGetter(TrackedEntity.class, ServerEntity.class);
     private static final MethodHandle TRACKING_RANGE = NMS.getFirstGetter(TrackedEntity.class, int.class);
-    private static final MethodHandle TRACKING_RANGE_SETTER = NMS.getFirstFinalSetter(TrackedEntity.class, int.class);
+    //private static final MethodHandle TRACKING_RANGE_SETTER = NMS.getFirstFinalSetter(TrackedEntity.class, int.class);
     private static final MethodHandle TRACKING_SET_GETTER = NMS.getFirstGetter(TrackedEntity.class, Set.class);
     private static final MethodHandle TRACKING_SET_SETTER = NMS.getFirstFinalSetter(TrackedEntity.class, Set.class);
     private static final MethodHandle UPDATE_INTERVAL = NMS.getGetter(ServerEntity.class, "h");
