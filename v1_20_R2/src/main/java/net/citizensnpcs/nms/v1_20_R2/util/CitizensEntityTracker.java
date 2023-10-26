@@ -3,6 +3,7 @@ package net.citizensnpcs.nms.v1_20_R2.util;
 import java.lang.invoke.MethodHandle;
 import java.util.Set;
 
+import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -60,7 +61,7 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
 
     public void updateLastPlayer(ServerPlayer lastUpdatedPlayer) {
         if (tracker.isRemoved() || tracker.getBukkitEntity().getType() != EntityType.PLAYER
-                || !CitizensAPI.hasImplementation())
+                || !CitizensAPI.hasImplementation() || lastUpdatedPlayer instanceof EntityHumanNPC)
             return;
         final ServerPlayer entityplayer = lastUpdatedPlayer;
         Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
@@ -81,6 +82,7 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
             }
             return;
         }
+
         Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
             if (tracker.isRemoved() || entityplayer.isRemoved())
                 return;
@@ -89,6 +91,14 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
                 NMSImpl.sendPacket(entityplayer.getBukkitEntity(), new ClientboundAnimatePacket(tracker, 0));
             }
         }, Setting.TABLIST_REMOVE_PACKET_DELAY.asTicks());
+
+        /*
+        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
+            if (seenBy.contains(entityplayer)) {
+                updatePlayer(entityplayer);
+            }
+        }, 1);
+         */
     }
 
     /*
@@ -97,7 +107,7 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
         if (entityplayer instanceof EntityHumanNPC)
             return;
 
-        if (!tracker.isRemoved() && !seenBy.contains(entityplayer.connection) && tracker instanceof NPCHolder) {
+        if (!tracker.isRemoved() && seenBy.contains(entityplayer.connection) && tracker instanceof NPCHolder) {
             NPC npc = ((NPCHolder) tracker).getNPC();
             if (REQUIRES_SYNC == null) {
                 REQUIRES_SYNC = !Bukkit.isPrimaryThread();

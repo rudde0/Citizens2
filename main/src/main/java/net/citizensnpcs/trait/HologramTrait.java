@@ -116,8 +116,8 @@ public class HologramTrait extends Trait {
                 0));
 
         if (useDisplayEntities) {
-            ((Interaction) hologramNPC.getEntity()).setInteractionWidth(0);
-            NMS.updateMountedInteractionHeight(hologramNPC.getEntity(), npc.getEntity(), heightOffset);
+            ((Interaction) hologramNPC.getEntity()).setInteractionWidth(-1f);
+            NMS.updateMountedInteractionHeight(hologramNPC.getEntity(), npc.getEntity(), (heightOffset + 0.2));
         }
 
         Matcher itemMatcher = ITEM_MATCHER.matcher(line);
