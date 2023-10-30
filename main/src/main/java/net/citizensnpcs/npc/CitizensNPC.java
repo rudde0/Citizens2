@@ -61,6 +61,7 @@ import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.PlayerAnimation;
 import net.citizensnpcs.util.PlayerUpdateTask;
 import net.citizensnpcs.util.Util;
+import org.spigotmc.TrackingRange;
 
 public class CitizensNPC extends AbstractNPC {
     private ChunkCoord cachedCoord;

@@ -3,7 +3,6 @@ package net.citizensnpcs.nms.v1_20_R2.util;
 import java.lang.invoke.MethodHandle;
 import java.util.Set;
 
-import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -14,7 +13,7 @@ import net.citizensnpcs.Settings.Setting;
 import net.citizensnpcs.api.CitizensAPI;
 //import net.citizensnpcs.api.event.NPCSeenByPlayerEvent;
 import net.citizensnpcs.api.npc.NPC;
-//import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
+import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.util.NMS;
 //import net.citizensnpcs.util.Util;
