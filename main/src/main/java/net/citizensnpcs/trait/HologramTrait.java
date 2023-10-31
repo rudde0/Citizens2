@@ -1,28 +1,33 @@
 package net.citizensnpcs.trait;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import net.citizensnpcs.Settings.Setting;
 import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.command.Arg.CompletionsProvider;
+import net.citizensnpcs.api.command.CommandContext;
 import net.citizensnpcs.api.npc.MemoryNPCDataStore;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
@@ -30,20 +35,21 @@ import net.citizensnpcs.api.persistence.Persist;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.TraitName;
 import net.citizensnpcs.api.util.DataKey;
+import net.citizensnpcs.api.util.Messaging;
 import net.citizensnpcs.api.util.Placeholders;
 import net.citizensnpcs.api.util.SpigotUtil;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
 
 /**
- * Persists a hologram attached to the NPC.
+ * Manages a set of <em>holograms</em> attached to the NPC. Holograms are lines of text or items that follow the NPC at
+ * some offset (typically vertically offset).
  */
+// TODO: refactor this class
 @TraitName("hologramtrait")
 public class HologramTrait extends Trait {
     private Location currentLoc;
     private BiFunction<String, Player, String> customHologramSupplier;
-    @Persist
-    private HologramDirection direction = HologramDirection.BOTTOM_UP;
     private double lastEntityHeight = 0;
     private boolean lastNameplateVisible;
     @Persist
@@ -100,6 +106,7 @@ public class HologramTrait extends Trait {
             hologramNPC = registry.createNPC(EntityType.INTERACTION, line);
             hologramNPC.addTrait(new ClickRedirectTrait(npc));
             hologramNPC.data().set(NPC.Metadata.NAMEPLATE_VISIBLE, true);
+            hologramNPC.getOrAddTrait(MountTrait.class).setMountedOn(npc.getUniqueId());
         } else {
             hologramNPC = registry.createNPC(EntityType.ARMOR_STAND, line);
             hologramNPC.getOrAddTrait(ArmorStandTrait.class).setAsHelperEntityWithName(npc);
@@ -109,27 +116,37 @@ public class HologramTrait extends Trait {
             hologramNPC.addTrait(PacketNPC.class);
         }
 
-        hologramNPC.spawn(currentLoc.clone().add(0,
-                getEntityHeight()
-                        + (direction == HologramDirection.BOTTOM_UP ? heightOffset : getMaxHeight() - heightOffset),
-                0));
+        hologramNPC.data().set(NPC.Metadata.HOLOGRAM_FOR, npc.getUniqueId().toString());
+        hologramNPC.spawn(currentLoc.clone().add(0, getEntityHeight() + heightOffset, 0));
 
-        if (useDisplayEntities) {
-            Interaction interactionEntity = (Interaction) hologramNPC.getEntity();
-            interactionEntity.setInteractionWidth(0);
-            interactionEntity.setResponsive(false);
-            NMS.updateMountedInteractionHeight(hologramNPC.getEntity(), npc.getEntity(), heightOffset);
+        Matcher itemMatcher = ITEM_MATCHER.matcher(line);
+        if (itemMatcher.matches()) {
+            Material item = SpigotUtil.isUsing1_13API() ? Material.matchMaterial(itemMatcher.group(1), false)
+                    : Material.matchMaterial(itemMatcher.group(1));
+            ItemStack itemStack = new ItemStack(item, 1);
+            final NPC itemNPC = registry.createNPCUsingItem(EntityType.DROPPED_ITEM, "", itemStack);
+            itemNPC.data().setPersistent(NPC.Metadata.NAMEPLATE_VISIBLE, false);
+            if (itemMatcher.group(2) != null) {
+                if (itemMatcher.group(2).charAt(1) == '{') {
+                    Bukkit.getUnsafe().modifyItemStack(itemStack, itemMatcher.group(2).substring(1));
+                    itemNPC.setItemProvider(() -> itemStack);
+                } else {
+                    itemNPC.getOrAddTrait(ScoreboardTrait.class)
+                            .setColor(Util.matchEnum(ChatColor.values(), itemMatcher.group(2).substring(1)));
+                }
+            }
+            itemNPC.getOrAddTrait(MountTrait.class).setMountedOn(hologramNPC.getUniqueId());
+            itemNPC.spawn(currentLoc);
+            final NPC hn = hologramNPC;
+            itemNPC.addRunnable(() -> {
+                if (!itemNPC.isSpawned() || !hn.isSpawned()) {
+                    itemNPC.destroy();
+                }
+            });
         }
 
         lastEntityHeight = getEntityHeight();
         return hologramNPC;
-    }
-
-    /**
-     * @return The direction that hologram lines are displayed in
-     */
-    public HologramDirection getDirection() {
-        return direction;
     }
 
     private double getEntityHeight() {
@@ -170,10 +187,6 @@ public class HologramTrait extends Trait {
         return Lists.transform(lines, l -> l.text);
     }
 
-    private double getMaxHeight() {
-        return (lastNameplateVisible ? getLineHeight() : 0) + getHeight(lines.size() - 1);
-    }
-
     /**
      * Note: this is implementation-specific and may be removed at a later date.
      */
@@ -202,6 +215,28 @@ public class HologramTrait extends Trait {
 
         for (HologramLine line : lines) {
             line.removeNPC();
+        }
+    }
+
+    public void onHologramSeenByPlayer(NPC hologram, Player player) {
+        if (useDisplayEntities && npc.isSpawned()) {
+            double height = -1;
+            if (nameLine != null && hologram.equals(nameLine.hologram)) {
+                height = 0;
+            } else {
+                for (int i = 0; i < lines.size(); i++) {
+                    if (hologram.equals(lines.get(i).hologram)) {
+                        height = getHeight(i);
+                        break;
+                    }
+                }
+            }
+
+            if (height == -1)
+                return;
+
+            Messaging.debug(npc, "hologram interaction ", hologram.getEntity(), "height offset set to", height);
+            NMS.linkTextInteraction(player, hologram.getEntity(), npc.getEntity(), height);
         }
     }
 
@@ -301,10 +336,6 @@ public class HologramTrait extends Trait {
                 nameLine.hologram.teleport(npcLoc.clone().add(0, getEntityHeight(), 0), TeleportCause.PLUGIN);
             }
 
-            if (useDisplayEntities && nameLine.hologram.getEntity().getVehicle() == null) {
-                NMS.updateMountedInteractionHeight(nameLine.hologram.getEntity(), npc.getEntity(), 0);
-            }
-
             if (updateName) {
                 nameLine.setText(npc.getRawName());
             }
@@ -324,14 +355,8 @@ public class HologramTrait extends Trait {
             }
 
             if (updatePosition && !useDisplayEntities) {
-                Location tp = npcLoc.clone().add(0, lastEntityHeight
-                        + (direction == HologramDirection.BOTTOM_UP ? getHeight(i) : getMaxHeight() - getHeight(i)), 0);
+                Location tp = npcLoc.clone().add(0, lastEntityHeight + getHeight(i), 0);
                 hologramNPC.teleport(tp, TeleportCause.PLUGIN);
-            }
-
-            if (useDisplayEntities && hologramNPC.getEntity().getVehicle() == null) {
-                NMS.updateMountedInteractionHeight(hologramNPC.getEntity(), npc.getEntity(),
-                        (direction == HologramDirection.BOTTOM_UP ? getHeight(i) : getMaxHeight() - getHeight(i)));
             }
 
             String text = line.text;
@@ -359,17 +384,6 @@ public class HologramTrait extends Trait {
             root.setDouble("lines." + i + ".margin.bottom", line.mb);
             i++;
         }
-    }
-
-    /**
-     * @see #getDirection()
-     * @param direction
-     *            The new direction
-     */
-    public void setDirection(HologramDirection direction) {
-        this.direction = direction;
-
-        reloadLineHolograms();
     }
 
     /**
@@ -437,11 +451,6 @@ public class HologramTrait extends Trait {
         reloadLineHolograms();
     }
 
-    public enum HologramDirection {
-        BOTTOM_UP,
-        TOP_DOWN;
-    }
-
     private class HologramLine implements Function<Player, String> {
         NPC hologram;
         double mb, mt;
@@ -503,13 +512,19 @@ public class HologramTrait extends Trait {
         }
     }
 
-    private static final Pattern ITEM_MATCHER = Pattern.compile("<item:(.*?)([:].*?)?>");
-    private static boolean SUPPORTS_TEXT_DISPLAY = false;
-    static {
-        try {
-            EntityType.valueOf("TEXT_DISPLAY");
-            SUPPORTS_TEXT_DISPLAY = true;
-        } catch (IllegalArgumentException iae) {
+    public static class TabCompletions implements CompletionsProvider {
+        @Override
+        public Collection<String> getCompletions(CommandContext args, CommandSender sender, NPC npc) {
+            if (npc != null && LINE_ARGS.contains(args.getString(1).toLowerCase())) {
+                HologramTrait ht = npc.getOrAddTrait(HologramTrait.class);
+                return IntStream.range(0, ht.getLines().size()).mapToObj(Integer::toString)
+                        .collect(Collectors.toList());
+            }
+            return Collections.emptyList();
         }
+
+        private static final List<String> LINE_ARGS = ImmutableList.of("set", "remove", "margintop", "marginbottom");
     }
+
+    private static final Pattern ITEM_MATCHER = Pattern.compile("<item:(.*?)([:].*?)?>");
 }

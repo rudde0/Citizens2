@@ -271,6 +271,7 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import net.minecraft.network.protocol.game.VecDeltaCodec;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -287,6 +288,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
@@ -332,6 +334,7 @@ import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.inventory.AnvilMenu;
@@ -457,7 +460,7 @@ public class NMSImpl implements NMSBridge {
         }
         EnchantmentHelper.doPostHurtEffects(source, target);
         EnchantmentHelper.doPostDamageEffects(target, source);
-    };
+    }
 
     @Override
     public void cancelMoveDestination(org.bukkit.entity.Entity entity) {
@@ -473,7 +476,7 @@ public class NMSImpl implements NMSBridge {
                 t.printStackTrace();
             }
         }
-    }
+    };
 
     @Override
     @SuppressWarnings("rawtypes")
@@ -911,6 +914,22 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
+    public void linkTextInteraction(org.bukkit.entity.Player player, org.bukkit.entity.Entity entity,
+            org.bukkit.entity.Entity mount, double offset) {
+        Interaction handle = (Interaction) getHandle(entity);
+        offset += handle.getMyRidingOffset(getHandle(mount));
+        sendPacket(player,
+                new ClientboundBundlePacket(List.of(
+                        new ClientboundSetEntityDataPacket(entity.getEntityId(),
+                                List.of(new SynchedEntityData.DataItem<>(INTERACTION_WIDTH, 0f).value(),
+                                        new SynchedEntityData.DataItem<>(INTERACTION_HEIGHT, (float) offset).value(),
+                                        new SynchedEntityData.DataItem<>(DATA_POSE, Pose.CROAKING).value())),
+                        new ClientboundSetPassengersPacket(getHandle(mount)),
+                        new ClientboundSetEntityDataPacket(entity.getEntityId(),
+                                List.of(new SynchedEntityData.DataItem<>(INTERACTION_HEIGHT, 999999f).value())))));
+    }
+
+    @Override
     public void load(CommandManager manager) {
         registerTraitWithCommand(manager, EnderDragonTrait.class);
         registerTraitWithCommand(manager, AllayTrait.class);
@@ -1261,8 +1280,8 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
-    public void playAnimation(PlayerAnimation animation, Player player, int radius) {
-        PlayerAnimationImpl.play(animation, player, radius);
+    public void playAnimation(PlayerAnimation animation, Player player, Iterable<Player> to) {
+        PlayerAnimationImpl.play(animation, player, to);
     }
 
     @Override
@@ -1642,6 +1661,44 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
+    public void setWardenPose(org.bukkit.entity.Entity entity, Object pose) {
+        Warden warden = (Warden) getHandle(entity);
+        if (pose == org.bukkit.entity.Pose.DIGGING) {
+            if (warden.hasPose(Pose.DIGGING))
+                return;
+
+            warden.setPose(Pose.DIGGING);
+            warden.playSound(SoundEvents.WARDEN_DIG, 5.0F, 1.0F);
+        } else if (pose == org.bukkit.entity.Pose.EMERGING) {
+            if (warden.hasPose(Pose.EMERGING))
+                return;
+
+            warden.setPose(Pose.EMERGING);
+            warden.playSound(SoundEvents.WARDEN_EMERGE, 5.0F, 1.0F);
+
+            Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
+                if (warden.hasPose(Pose.EMERGING)) {
+                    warden.setPose(Pose.STANDING);
+                }
+            }, 134);
+        } else if (pose == org.bukkit.entity.Pose.ROARING) {
+            if (warden.hasPose(Pose.ROARING))
+                return;
+
+            warden.setPose(Pose.ROARING);
+            warden.playSound(SoundEvents.WARDEN_ROAR, 3.0F, 1.0F);
+
+            Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
+                if (warden.hasPose(Pose.ROARING)) {
+                    warden.setPose(Pose.STANDING);
+                }
+            }, 84);
+        } else {
+            warden.setPose(Pose.STANDING);
+        }
+    }
+
+    @Override
     public void setWitherCharged(Wither wither, boolean charged) {
         WitherBoss handle = ((CraftWither) wither).getHandle();
         handle.setInvulnerableTicks(charged ? 20 : 0);
@@ -1667,7 +1724,7 @@ public class NMSImpl implements NMSBridge {
             ENTITY_REGISTRY_SETTER.invoke(null, ENTITY_REGISTRY.get());
         } catch (Throwable e) {
         }
-    }
+    };
 
     @Override
     public void sleep(org.bukkit.entity.Player player, boolean sleeping) {
@@ -1782,22 +1839,6 @@ public class NMSImpl implements NMSBridge {
         handle.connection.send(new ClientboundOpenScreenPacket(handle.containerMenu.containerId, menuType,
                 MutableComponent.create(new LiteralContents(newTitle))));
         player.updateInventory();
-    }
-
-    @Override
-    public void updateMountedInteractionHeight(org.bukkit.entity.Entity entity, org.bukkit.entity.Entity mount,
-            double offset) {
-        Interaction handle = (Interaction) getHandle(entity);
-        offset += handle.getMyRidingOffset(getHandle(mount));
-        ((org.bukkit.entity.Interaction) entity).setInteractionHeight((float) offset);
-        mount.addPassenger(entity);
-        handle.setPose(Pose.SNIFFING);
-        Bukkit.getScheduler().runTask(CitizensAPI.getPlugin(), () -> {
-            if (!entity.isValid())
-                return;
-            sendPacketNearby(null, entity.getLocation(), new ClientboundSetEntityDataPacket(handle.getId(),
-                    List.of(new SynchedEntityData.DataItem<>(INTERACTION_HEIGHT, 999999f).value())));
-        });
     }
 
     @Override
@@ -2197,17 +2238,30 @@ public class NMSImpl implements NMSBridge {
         if (pitch == null) {
             pitch = handle.getXRot();
         }
+
         List<Packet<?>> toSend = Lists.newArrayList();
         if (position) {
             TrackedEntity entry = ((ServerLevel) handle.level()).getChunkSource().chunkMap.entityMap
                     .get(handle.getId());
+            if (entry == null) {
+                Messaging.debug("Null tracker entity for ", from);
+                return Collections.emptyList();
+            }
+
             VecDeltaCodec vdc = null;
             try {
-                vdc = (VecDeltaCodec) POSITION_CODEC_GETTER.invoke((ServerEntity) SERVER_ENTITY_GETTER.invoke(entry));
+                ServerEntity serverEntity = (ServerEntity) SERVER_ENTITY_GETTER.invoke(entry);
+                if (serverEntity == null) {
+                    Messaging.debug("Null server entity for ", from);
+                    return Collections.emptyList();
+                }
+
+                vdc = (VecDeltaCodec) POSITION_CODEC_GETTER.invoke(serverEntity);
             } catch (Throwable e) {
                 e.printStackTrace();
                 return Collections.emptyList();
             }
+
             Vec3 pos = handle.trackingPosition();
             toSend.add(new ClientboundMoveEntityPacket.PosRot(handle.getId(), (short) vdc.encodeX(pos),
                     (short) vdc.encodeY(pos), (short) vdc.encodeZ(pos), (byte) (bodyYaw * 256.0F / 360.0F),
@@ -2523,6 +2577,7 @@ public class NMSImpl implements NMSBridge {
     public static MethodHandle CONNECTION_PACKET_LISTENER = NMS.getSetter(Connection.class, "q");
     private static final MethodHandle CRAFT_BOSSBAR_HANDLE_FIELD = NMS.getFirstSetter(CraftBossBar.class,
             ServerBossEvent.class);
+    private static EntityDataAccessor<Pose> DATA_POSE = null;
     private static final float DEFAULT_SPEED = 1F;
     public static final MethodHandle ENDERDRAGON_CHECK_WALLS = NMS.getFirstMethodHandleWithReturnType(EnderDragon.class,
             true, boolean.class, AABB.class);
@@ -2549,6 +2604,7 @@ public class NMSImpl implements NMSBridge {
     private static final MethodHandle HEAD_HEIGHT_METHOD = NMS.getFirstMethodHandle(Entity.class, true, Pose.class,
             EntityDimensions.class);
     private static EntityDataAccessor<Float> INTERACTION_HEIGHT = null;
+    private static EntityDataAccessor<Float> INTERACTION_WIDTH = null;
     private static final MethodHandle JUMP_FIELD = NMS.getGetter(LivingEntity.class, "bj");
     private static final MethodHandle LOOK_CONTROL_SETTER = NMS.getFirstSetter(Mob.class, LookControl.class);
     private static final MethodHandle MOVE_CONTROLLER_OPERATION = NMS.getSetter(MoveControl.class, "k");
@@ -2590,20 +2646,35 @@ public class NMSImpl implements NMSBridge {
             Messaging.logTr(Messages.ERROR_GETTING_ID_MAPPING, e.getMessage());
             e.printStackTrace();
         }
+
         try {
             // Middle one
             ENDERMAN_CREEPY = (EntityDataAccessor<Boolean>) NMS.getField(EnderMan.class, "bV").get(null);
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         try {
             RABBIT_TYPE_DATAWATCHER = (EntityDataAccessor<Integer>) NMS
                     .getFirstStaticGetter(Rabbit.class, EntityDataAccessor.class).invoke();
         } catch (Throwable e) {
             e.printStackTrace();
         }
+
         try {
             INTERACTION_HEIGHT = (EntityDataAccessor<Float>) NMS.getGetter(Interaction.class, "d").invoke();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            INTERACTION_WIDTH = (EntityDataAccessor<Float>) NMS.getGetter(Interaction.class, "c").invoke();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            DATA_POSE = (EntityDataAccessor<Pose>) NMS.getGetter(Entity.class, "as").invoke();
         } catch (Throwable e) {
             e.printStackTrace();
         }

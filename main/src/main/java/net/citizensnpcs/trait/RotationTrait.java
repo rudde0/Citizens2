@@ -105,6 +105,7 @@ public class RotationTrait extends Trait {
             PacketRotationSession session = itr.next();
             if (ran.contains(session))
                 continue;
+
             ran.add(session);
             session.run(npc.getEntity());
             if (!session.isActive()) {
@@ -187,6 +188,7 @@ public class RotationTrait extends Trait {
             if (triple == null) {
                 triple = new PacketRotationTriple(entity);
             }
+
             session.run(triple);
             if (!session.isActive()) {
                 triple = null;

@@ -635,6 +635,10 @@ public class NMS {
         return BRIDGE.isValid(entity);
     }
 
+    public static void linkTextInteraction(Player player, Entity interaction, Entity mount, double height) {
+        BRIDGE.linkTextInteraction(player, interaction, mount, height);
+    }
+
     public static void load(CommandManager commands) {
         BRIDGE.load(commands);
     }
@@ -679,8 +683,8 @@ public class NMS {
         BRIDGE.openHorseScreen(horse, equipper);
     }
 
-    public static void playAnimation(PlayerAnimation animation, Player player, int radius) {
-        BRIDGE.playAnimation(animation, player, radius);
+    public static void playAnimation(PlayerAnimation animation, Player player, Iterable<Player> to) {
+        BRIDGE.playAnimation(animation, player, to);
     }
 
     public static Runnable playerTicker(Player entity) {
@@ -852,8 +856,12 @@ public class NMS {
         BRIDGE.setTeamNameTagVisible(team, visible);
     }
 
-    public static void setVerticalMovement(org.bukkit.entity.Entity bukkitEntity, double d) {
+    public static void setVerticalMovement(Entity bukkitEntity, double d) {
         BRIDGE.setVerticalMovement(bukkitEntity, d);
+    }
+
+    public static void setWardenPose(Entity entity, Object pose) {
+        BRIDGE.setWardenPose(entity, pose);
     }
 
     public static void setWitherInvulnerable(Wither wither, boolean charged) {
@@ -885,10 +893,6 @@ public class NMS {
 
     public static void updateInventoryTitle(Player player, InventoryView view, String newTitle) {
         BRIDGE.updateInventoryTitle(player, view, newTitle);
-    }
-
-    public static void updateMountedInteractionHeight(Entity entity, Entity mount, double height) {
-        BRIDGE.updateMountedInteractionHeight(entity, mount, height);
     }
 
     public static void updateNavigationWorld(org.bukkit.entity.Entity entity, org.bukkit.World world) {

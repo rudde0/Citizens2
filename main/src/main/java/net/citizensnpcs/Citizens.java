@@ -28,7 +28,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 import com.mojang.authlib.GameProfile;
 
 import ch.ethz.globis.phtree.PhTreeHelper;
@@ -82,8 +81,6 @@ import net.citizensnpcs.npc.profile.ProfileFetcher;
 import net.citizensnpcs.npc.skin.Skin;
 import net.citizensnpcs.trait.ClickRedirectTrait;
 import net.citizensnpcs.trait.CommandTrait;
-import net.citizensnpcs.trait.HologramTrait;
-import net.citizensnpcs.trait.ScriptTrait;
 import net.citizensnpcs.trait.ShopTrait;
 import net.citizensnpcs.util.Messages;
 import net.citizensnpcs.util.NMS;
@@ -185,11 +182,14 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         if (type.equalsIgnoreCase("nbt")) {
             saves = new NBTStorage(new File(folder, Setting.STORAGE_FILE.asString()), "Citizens NPC Storage");
         }
+
         if (saves == null) {
             saves = new YamlStorage(new File(folder, Setting.STORAGE_FILE.asString()), "Citizens NPC Storage");
         }
+
         if (!saves.load())
             return null;
+
         return SimpleNPCDataStore.create(saves);
     }
 
@@ -280,11 +280,6 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
     @Override
     public ClassLoader getOwningClassLoader() {
         return getClassLoader();
-    }
-
-    @Override
-    public File getScriptFolder() {
-        return new File(getDataFolder(), "scripts");
     }
 
     public StoredShops getShops() {
@@ -562,35 +557,13 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
                     return 0;
                 return Iterables.size(npcRegistry);
             }));
-            metrics.addCustomChart(new Metrics.AdvancedPie("hologram_direction", () -> {
-                Map<String, Integer> res = Maps.newHashMap();
-                for (NPC npc : npcRegistry) {
-                    HologramTrait hg = npc.getTraitNullable(HologramTrait.class);
-                    if (hg != null) {
-                        res.put(hg.getDirection().name(), res.getOrDefault(hg.getDirection().name(), 0) + 1);
-                    }
-                }
-                return res;
-            }));
+            metrics.addCustomChart(new Metrics.SimplePie("locale", () -> Locale.getDefault().toString()));
             metrics.addCustomChart(new Metrics.AdvancedPie("traits", () -> {
                 Map<String, Integer> res = Maps.newHashMap();
                 for (NPC npc : npcRegistry) {
                     for (Trait trait : npc.getTraits()) {
                         if (traitFactory.trackStats(trait)) {
                             res.put(trait.getName(), res.getOrDefault(trait.getName(), 0) + 1);
-                        }
-                    }
-                }
-                return res;
-            }));
-            metrics.addCustomChart(new Metrics.AdvancedPie("script_extensions", () -> {
-                Map<String, Integer> res = Maps.newHashMap();
-                for (NPC npc : npcRegistry) {
-                    ScriptTrait trait = npc.getTraitNullable(ScriptTrait.class);
-                    if (trait != null) {
-                        for (String file : trait.getScripts()) {
-                            String ext = Files.getFileExtension(file);
-                            res.put(ext, res.getOrDefault(ext, 0) + 1);
                         }
                     }
                 }
@@ -630,7 +603,8 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         @Override
         public void run() {
             Plugin plib = Bukkit.getPluginManager().getPlugin("ProtocolLib");
-            if (plib != null && plib.isEnabled() && ProtocolLibrary.getProtocolManager() != null) {
+            if (Setting.HOOK_PROTOCOLLIB.asBoolean() && plib != null && plib.isEnabled()
+                    && ProtocolLibrary.getProtocolManager() != null) {
                 try {
                     protocolListener = new ProtocolLibListener(Citizens.this);
                 } catch (Throwable t) {
