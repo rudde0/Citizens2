@@ -54,6 +54,7 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
         this(map, getTracker(entry), getTrackingDistance(entry), getUpdateInterval(entry), getTrackDelta(entry));
     }
 
+    /*
     @Override
     public void updatePlayer(final ServerPlayer entityplayer) {
         if (entityplayer instanceof EntityHumanNPC)
@@ -96,6 +97,7 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
 
         super.updatePlayer(entityplayer);
     }
+     */
 
     private static boolean getTrackDelta(TrackedEntity entry) {
         try {
