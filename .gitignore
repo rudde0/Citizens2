@@ -12,3 +12,16 @@ dependency-reduced-pom.xml
 *.jardesc
 *.lnk
 *.bbmodel
+
+# Old versions
+v_1_8_R3/
+v_1_10_R1/
+v_1_11_R1/
+v_1_12_R1/
+v_1_13_R2/
+v_1_14_R1/
+v_1_15_R1/
+v_1_16_R3/
+v_1_17_R1/
+v_1_18_R2/
+v_1_19_R3/
