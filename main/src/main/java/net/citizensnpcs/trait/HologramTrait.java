@@ -118,32 +118,6 @@ public class HologramTrait extends Trait {
         hologramNPC.data().set(NPC.Metadata.HOLOGRAM_FOR, npc.getUniqueId().toString());
         hologramNPC.spawn(currentLoc.clone().add(0, getEntityHeight() + heightOffset, 0));
 
-        Matcher itemMatcher = ITEM_MATCHER.matcher(line);
-        if (itemMatcher.matches()) {
-            Material item = SpigotUtil.isUsing1_13API() ? Material.matchMaterial(itemMatcher.group(1), false)
-                    : Material.matchMaterial(itemMatcher.group(1));
-            ItemStack itemStack = new ItemStack(item, 1);
-            final NPC itemNPC = registry.createNPCUsingItem(EntityType.DROPPED_ITEM, "", itemStack);
-            itemNPC.data().setPersistent(NPC.Metadata.NAMEPLATE_VISIBLE, false);
-            if (itemMatcher.group(2) != null) {
-                if (itemMatcher.group(2).charAt(1) == '{') {
-                    Bukkit.getUnsafe().modifyItemStack(itemStack, itemMatcher.group(2).substring(1));
-                    itemNPC.setItemProvider(() -> itemStack);
-                } else {
-                    itemNPC.getOrAddTrait(ScoreboardTrait.class)
-                            .setColor(Util.matchEnum(ChatColor.values(), itemMatcher.group(2).substring(1)));
-                }
-            }
-            itemNPC.getOrAddTrait(MountTrait.class).setMountedOn(hologramNPC.getUniqueId());
-            itemNPC.spawn(currentLoc);
-            final NPC hn = hologramNPC;
-            itemNPC.addRunnable(() -> {
-                if (!itemNPC.isSpawned() || !hn.isSpawned()) {
-                    itemNPC.destroy();
-                }
-            });
-        }
-
         lastEntityHeight = getEntityHeight();
         return hologramNPC;
     }
@@ -218,25 +192,23 @@ public class HologramTrait extends Trait {
     }
 
     public void onHologramSeenByPlayer(NPC hologram, Player player) {
-        if (useDisplayEntities && npc.isSpawned()) {
-            double height = -1;
-            if (nameLine != null && hologram.equals(nameLine.hologram)) {
-                height = 0;
-            } else {
-                for (int i = 0; i < lines.size(); i++) {
-                    if (hologram.equals(lines.get(i).hologram)) {
-                        height = getHeight(i);
-                        break;
-                    }
-                }
+        if (!useDisplayEntities || !npc.isSpawned())
+            return;
+
+        double currHeight = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            if (hologram.equals(lines.get(i).hologram)) {
+                currHeight = getHeight(i);
+                break;
             }
-
-            if (height == -1)
-                return;
-
-            Messaging.debug(npc, "hologram interaction ", hologram.getEntity(), "height offset set to", height);
-            NMS.linkTextInteraction(player, hologram.getEntity(), npc.getEntity(), height);
         }
+
+        if (currHeight == -1)
+            return;
+
+        Messaging.debug(npc, "hologram interaction ", hologram.getEntity(), "height offset set to", currHeight);
+        NMS.linkTextInteraction(player, hologram.getEntity(), npc.getEntity(), currHeight + 0.3);
+
     }
 
     @Override

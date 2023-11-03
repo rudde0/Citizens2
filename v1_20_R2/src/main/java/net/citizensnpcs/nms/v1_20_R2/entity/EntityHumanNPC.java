@@ -67,7 +67,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
     private EmptyServerStatsCounter statsCache;
 
     public EntityHumanNPC(MinecraftServer minecraftServer, ServerLevel world, GameProfile gameProfile,
-            ClientInformation ci, NPC npc) {
+                          ClientInformation ci, NPC npc) {
         super(minecraftServer, world, gameProfile, ci);
         this.npc = (CitizensNPC) npc;
         if (npc != null) {
@@ -123,7 +123,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         super.baseTick();
         boolean navigating = (npc.getNavigator().isNavigating() ?
                 npc.getNavigator().getTargetAsLocation().distance(npc.getEntity().getLocation())
-                > npc.getNavigator().getDefaultParameters().pathDistanceMargin()
+                        > npc.getNavigator().getDefaultParameters().pathDistanceMargin()
                 : ai.getMoveControl().hasWanted());
 
         if (!navigating && getBukkitEntity() != null

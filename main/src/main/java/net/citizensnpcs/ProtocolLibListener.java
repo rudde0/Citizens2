@@ -130,32 +130,40 @@ public class ProtocolLibListener implements Listener {
                             uuid -> mirrorTraits.get(uuid));
                     return;
                 }
+
                 List<PlayerInfoData> list = event.getPacket().getPlayerInfoDataLists().readSafely(0);
                 if (list == null)
                     return;
+
                 boolean changed = false;
+                GameProfile playerProfile = null;
+                WrappedGameProfile wgp = null;
+                WrappedChatComponent playerName = null;
                 for (int i = 0; i < list.size(); i++) {
                     PlayerInfoData npcInfo = list.get(i);
                     if (npcInfo == null)
                         continue;
 
                     MirrorTrait trait = mirrorTraits.get(npcInfo.getProfile().getUUID());
-                    if (trait == null || !trait.isMirroring(event.getPlayer())) {
+                    if (trait == null || !trait.isMirroring(event.getPlayer()))
                         continue;
+
+                    if (playerProfile == null) {
+                        playerProfile = NMS.getProfile(event.getPlayer());
+                        wgp = WrappedGameProfile.fromPlayer(event.getPlayer());
+                        playerName = WrappedChatComponent.fromText(event.getPlayer().getDisplayName());
                     }
-                    GameProfile playerProfile = NMS.getProfile(event.getPlayer());
+
                     if (trait.mirrorName()) {
-                        list.set(i,
-                                new PlayerInfoData(
-                                        WrappedGameProfile.fromPlayer(event.getPlayer())
-                                                .withId(npcInfo.getProfile().getId()),
-                                        npcInfo.getLatency(), npcInfo.getGameMode(),
-                                        WrappedChatComponent.fromText(event.getPlayer().getDisplayName())));
+                        list.set(i, new PlayerInfoData(wgp.withId(npcInfo.getProfile().getId()), npcInfo.getLatency(),
+                                npcInfo.getGameMode(), playerName));
                         continue;
                     }
+
                     Collection<Property> textures = playerProfile.getProperties().get("textures");
                     if (textures == null || textures.size() == 0)
                         continue;
+
                     npcInfo.getProfile().getProperties().clear();
                     for (String key : playerProfile.getProperties().keySet()) {
                         npcInfo.getProfile().getProperties().putAll(key,
@@ -166,13 +174,14 @@ public class ProtocolLibListener implements Listener {
                     }
                     changed = true;
                 }
+
                 if (changed) {
                     event.getPacket().getPlayerInfoDataLists().write(0, list);
                 }
             }
         });
         manager.addPacketListener(new PacketAdapter(
-                plugin, ListenerPriority.MONITOR, Arrays.asList(Server.ENTITY_HEAD_ROTATION, Server.ENTITY_LOOK,
+                plugin, ListenerPriority.HIGHEST, Arrays.asList(Server.ENTITY_HEAD_ROTATION, Server.ENTITY_LOOK,
                         Server.REL_ENTITY_MOVE_LOOK, Server.ENTITY_MOVE_LOOK, Server.POSITION, Server.ENTITY_TELEPORT),
                 ListenerOptions.ASYNC) {
             @Override

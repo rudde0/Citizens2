@@ -11,7 +11,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <craftbukkit.version>1.20.2-R0.1-SNAPSHOT</craftbukkit.version>
         <placeholderapi.version>2.11.2</placeholderapi.version>
-        <citizensapi.version>2.0.33-SNAPSHOT</citizensapi.version>
+        <citizensapi.version>${project.version}</citizensapi.version>
         <worldguard.version>7.1.0-SNAPSHOT</worldguard.version>
         <powermock.version>1.4.12</powermock.version>
     </properties>
@@ -43,10 +43,6 @@
             <id>AlessioDP</id>
             <url>https://repo.alessiodp.com/releases/</url>
         </repository>
-        <repository>
-            <id>viaversion-repo</id>
-            <url>https://repo.viaversion.com</url>
-        </repository> 
     </repositories>
     <dependencies>
         <dependency>
@@ -79,13 +75,7 @@
             <artifactId>ProtocolLib</artifactId>
             <version>5.0.0</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.viaversion</groupId>
-            <artifactId>viaversion-api</artifactId>
-            <version>4.7.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
+        </dependency> 
         <dependency>
             <groupId>ch.ethz.globis.phtree</groupId>
             <artifactId>phtree</artifactId>

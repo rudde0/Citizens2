@@ -202,7 +202,6 @@ public class Settings {
         MAXIMUM_ASTAR_ITERATIONS("The maximum number of blocks to check when pathfinding",
                 "npc.pathfinding.maximum-new-pathfinder-iterations", "npc.pathfinding.new-finder.maximum-iterations",
                 768),
-
         MAXIMUM_VISITED_NODES("The maximum number of blocks to check when MINECRAFT pathfinding",
                 "npc.pathfinding.maximum-visited-nodes", "npc.pathfinding.maximum-visited-blocks", 1024),
         MESSAGE_COLOUR("general.color-scheme.message", "<green>"),
