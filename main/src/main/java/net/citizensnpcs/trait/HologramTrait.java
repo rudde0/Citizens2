@@ -119,8 +119,6 @@ public class HologramTrait extends Trait {
         }
         hologramNPC.spawn(currentLoc.clone().add(0, getEntityHeight() + heightOffset, 0));
 
-<<<<<<< HEAD
-=======
         Matcher itemMatcher = ITEM_MATCHER.matcher(line);
         if (itemMatcher.matches()) {
             Material item = SpigotUtil.isUsing1_13API() ? Material.matchMaterial(itemMatcher.group(1), false)
@@ -146,7 +144,6 @@ public class HologramTrait extends Trait {
                 }
             });
         }
->>>>>>> upstream/master
         lastEntityHeight = getEntityHeight();
         return hologramNPC;
     }
@@ -231,30 +228,23 @@ public class HologramTrait extends Trait {
     }
 
     public void onHologramSeenByPlayer(NPC hologram, Player player) {
-        if (!useDisplayEntities || !npc.isSpawned())
-            return;
-
-        double currHeight = -1;
-        for (int i = 0; i < lines.size(); i++) {
-            if (hologram.equals(lines.get(i).hologram)) {
-                currHeight = getHeight(i);
-                break;
+        if (useDisplayEntities && npc.isSpawned()) {
+            double height = -1;
+            if (nameLine != null && hologram.equals(nameLine.hologram)) {
+                height = 0;
+            } else {
+                for (int i = 0; i < lines.size(); i++) {
+                    if (hologram.equals(lines.get(i).hologram)) {
+                        height = getHeight(i);
+                        break;
+                    }
+                }
             }
-<<<<<<< HEAD
-=======
             if (height == -1)
                 return;
 
-            NMS.linkTextInteraction(player, hologram.getEntity(), npc.getEntity(), height);
->>>>>>> upstream/master
+            NMS.linkTextInteraction(player, hologram.getEntity(), npc.getEntity(), (height + 0.3));
         }
-
-        if (currHeight == -1)
-            return;
-
-        Messaging.debug(npc, "hologram interaction ", hologram.getEntity(), "height offset set to", currHeight);
-        NMS.linkTextInteraction(player, hologram.getEntity(), npc.getEntity(), currHeight + 0.3);
-
     }
 
     @Override

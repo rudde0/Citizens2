@@ -213,16 +213,12 @@ public class CitizensNavigator implements Navigator, Runnable {
             }
             session.getSession().rotateToFace(localParams.lookAtFunction().apply(this));
         }
-<<<<<<< HEAD
-
-=======
         if (localParams.destinationTeleportMargin() > 0
                 && npcLoc.distance(targetLoc) <= localParams.destinationTeleportMargin()) {
             // TODO: easing?
             npc.teleport(targetLoc, TeleportCause.PLUGIN);
             finished = true;
         }
->>>>>>> upstream/master
         if (!finished)
             return;
 

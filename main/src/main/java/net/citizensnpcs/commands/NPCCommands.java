@@ -2190,10 +2190,6 @@ public class NPCCommands {
             trait.removeGroup(removegroup);
             Messaging.sendTr(sender, Messages.PLAYERFILTER_GROUP_REMOVED, removegroup, npc.getName());
         }
-        if (applyRange != null) {
-            trait.setApplyRange(applyRange);
-            Messaging.sendTr(sender, Messages.PLAYERFILTER_APPLYRANGE_SET, npc.getName(), applyRange);
-        }
         if (args.hasFlag('e')) {
             trait.setPlayers(Collections.emptySet());
             Messaging.sendTr(sender, Messages.PLAYERFILTER_EMPTY_SET, npc.getName());

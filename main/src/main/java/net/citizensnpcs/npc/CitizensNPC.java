@@ -96,14 +96,8 @@ public class CitizensNPC extends AbstractNPC {
         if (!keepSelected) {
             data().remove("selectors");
         }
-<<<<<<< HEAD
 
-=======
-        if (getEntity() != null) {
-            getEntity().removeMetadata("NPC", CitizensAPI.getPlugin());
-            getEntity().removeMetadata("NPC-ID", CitizensAPI.getPlugin());
-        }
->>>>>>> upstream/master
+
         if (getEntity() instanceof Player) {
             PlayerUpdateTask.deregisterPlayer(getEntity());
         }
