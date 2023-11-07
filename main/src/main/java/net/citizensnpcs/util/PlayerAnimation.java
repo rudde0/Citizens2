@@ -1,11 +1,16 @@
 package net.citizensnpcs.util;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -46,32 +51,40 @@ public enum PlayerAnimation {
     }
 
     public void play(Player from, int radius) {
-        Location loc = from.getLocation();
-        Location cloc = new Location(null, 0, 0, 0);
-        List<Player> to = Lists.newArrayList();
-        for (Player player : CitizensAPI.getLocationLookup().getNearbyPlayers(loc, radius)) {
-            if (loc.getWorld() != player.getWorld() || !player.canSee(from)
-                    || loc.distance(player.getLocation(cloc)) > radius) {
-                continue;
+        play(from, () -> {
+            Location loc = from.getLocation();
+            Location cloc = new Location(null, 0, 0, 0);
+            List<Player> to = Lists.newArrayList();
+            for (Player player : CitizensAPI.getLocationLookup().getNearbyPlayers(loc, radius)) {
+                if (loc.getWorld() != player.getWorld() || !player.canSee(from)
+                        || loc.distance(player.getLocation(cloc)) > radius) {
+                    continue;
+                }
+                to.add(player);
             }
-            to.add(player);
-        }
-        play(from, to);
+            return to;
+        });
     }
 
     public void play(Player player, Iterable<Player> to) {
+        play(player, () -> to);
+    }
+
+    public void play(Player player, Player to) {
+        play(player, () -> ImmutableList.of(to));
+    }
+
+    public void play(Player player, Supplier<Iterable<Player>> to) {
         if (this == SIT) {
             if (player instanceof NPCHolder) {
                 ((NPCHolder) player).getNPC().getOrAddTrait(SitTrait.class).setSitting(player.getLocation());
                 return;
             }
-
             player.setMetadata("citizens.sitting", new FixedMetadataValue(CitizensAPI.getPlugin(), true));
             NPCRegistry registry = CitizensAPI.getNamedNPCRegistry("PlayerAnimationImpl");
             if (registry == null) {
                 registry = CitizensAPI.createNamedNPCRegistry("PlayerAnimationImpl", new MemoryNPCDataStore());
             }
-
             final NPC holder = registry.createNPC(EntityType.ARMOR_STAND, "");
             holder.getOrAddTrait(ArmorStandTrait.class).setAsPointEntity();
             holder.spawn(player.getLocation());
@@ -118,16 +131,18 @@ public enum PlayerAnimation {
             }
             return;
         } else if (this == STOP_USE_ITEM || this == START_USE_MAINHAND_ITEM || this == START_USE_OFFHAND_ITEM) {
-            NMS.playAnimation(this, player, to);
+            NMS.playAnimation(this, player, to.get());
             if (player.hasMetadata("citizens-using-item-id")) {
                 Bukkit.getScheduler().cancelTask(player.getMetadata("citizens-using-item-id").get(0).asInt());
                 player.removeMetadata("citizens-using-item-id", CitizensAPI.getPlugin());
             }
-
             if (this == STOP_USE_ITEM)
                 return;
 
-            if (player.hasMetadata("citizens-using-item-remaining-ticks")) {
+            ItemStack using = this == START_USE_MAINHAND_ITEM ? player.getItemInHand()
+                    : player.getInventory().getItemInOffHand();
+            if (using != null && BAD_ITEMS_TO_USE.contains(using.getType())
+                    && player.hasMetadata("citizens-using-item-remaining-ticks")) {
                 int remainingTicks = player.getMetadata("citizens-using-item-remaining-ticks").get(0).asInt();
                 new BukkitRunnable() {
                     @Override
@@ -136,9 +151,8 @@ public enum PlayerAnimation {
                             cancel();
                             return;
                         }
-
-                        NMS.playAnimation(PlayerAnimation.STOP_USE_ITEM, player, to);
-                        NMS.playAnimation(PlayerAnimation.this, player, to);
+                        NMS.playAnimation(PlayerAnimation.STOP_USE_ITEM, player, to.get());
+                        NMS.playAnimation(PlayerAnimation.this, player, to.get());
                         if (!player.hasMetadata("citizens-using-item-id")) {
                             player.setMetadata("citizens-using-item-id",
                                     new FixedMetadataValue(CitizensAPI.getPlugin(), getTaskId()));
@@ -147,14 +161,16 @@ public enum PlayerAnimation {
                 }.runTaskTimer(CitizensAPI.getPlugin(), Math.max(0, remainingTicks + 1),
                         Math.max(1, remainingTicks + 1));
             }
-
             return;
         }
-
-        NMS.playAnimation(this, player, to);
+        NMS.playAnimation(this, player, to.get());
     }
 
-    public void play(Player player, Player to) {
-        play(player, ImmutableList.of(to));
+    private static final Set<Material> BAD_ITEMS_TO_USE = EnumSet.noneOf(Material.class);
+    static {
+        try {
+            BAD_ITEMS_TO_USE.add(Material.valueOf("SPYGLASS"));
+        } catch (IllegalArgumentException e) {
+        }
     }
 }

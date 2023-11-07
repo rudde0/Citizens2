@@ -53,7 +53,6 @@ public abstract class MobEntityController extends AbstractEntityController {
                 npc.getOrAddTrait(ScoreboardTrait.class).createTeam(npc.getUniqueId().toString());
             }
         }
-
         return entity.getBukkitEntity();
     }
 
@@ -78,5 +77,5 @@ public abstract class MobEntityController extends AbstractEntityController {
         }
     }
 
-    private static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new WeakHashMap<Class<?>, Constructor<?>>();
+    private static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new WeakHashMap<>();
 }

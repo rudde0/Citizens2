@@ -75,12 +75,12 @@ public abstract class AbstractBlockBreaker extends BlockBreaker {
 
     @Override
     public BehaviorStatus run() {
-        if (!entity.isValid()) {
+        if (!entity.isValid())
             return BehaviorStatus.FAILURE;
-        }
-        if (!isDigging) {
+
+        if (!isDigging)
             return BehaviorStatus.SUCCESS;
-        }
+
         currentTick = (int) (System.currentTimeMillis() / 50);
         if (configuration.radius() > 0) {
             if (!inRange()) {
@@ -108,9 +108,9 @@ public abstract class AbstractBlockBreaker extends BlockBreaker {
         if (entity instanceof Player && currentTick % 5 == 0) {
             PlayerAnimation.ARM_SWING.play((Player) entity);
         }
-        if (entity.getWorld().getBlockAt(x, y, z).isEmpty()) {
+        if (entity.getWorld().getBlockAt(x, y, z).isEmpty())
             return BehaviorStatus.SUCCESS;
-        } else {
+        else {
             int tickDifference = currentTick - startDigTick;
             float damage = getDamage(tickDifference);
             if (damage >= 1F) {

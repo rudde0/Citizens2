@@ -67,7 +67,6 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
             if (REQUIRES_SYNC == null) {
                 REQUIRES_SYNC = !Bukkit.isPrimaryThread();
             }
-
             boolean cancelled = Util.callPossiblySync(() -> {
                 NPCSeenByPlayerEvent event = new NPCSeenByPlayerEvent(npc, entityplayer.getBukkitEntity());
                 try {
@@ -76,7 +75,6 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
                     REQUIRES_SYNC = true;
                     throw e;
                 }
-
                 if (event.isCancelled())
                     return true;
 
@@ -96,7 +94,6 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
             if (cancelled)
                 return;
         }
-
         super.updatePlayer(entityplayer);
     }
      */

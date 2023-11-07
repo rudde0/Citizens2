@@ -86,9 +86,8 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
     @Override
     public boolean causeFallDamage(float f, float f1, DamageSource damagesource) {
-        if (npc == null || !npc.isFlyable()) {
+        if (npc == null || !npc.isFlyable())
             return super.causeFallDamage(f, f1, damagesource);
-        }
         return false;
     }
 
@@ -119,7 +118,6 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
             super.doTick();
             return;
         }
-
         super.baseTick();
         boolean navigating = (npc.getNavigator().isNavigating() ?
                 npc.getNavigator().getTargetAsLocation().distance(npc.getEntity().getLocation())
@@ -133,26 +131,22 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
                 && (!npc.isProtected() || SpigotUtil.checkYSafe(getY(), getBukkitEntity().getWorld()))) {
             moveWithFallDamage(Vec3.ZERO);
         }
-
         Vec3 mot = getDeltaMovement();
         if (Math.abs(mot.x) < EPSILON && Math.abs(mot.y) < EPSILON && Math.abs(mot.z) < EPSILON) {
             setDeltaMovement(Vec3.ZERO);
         }
-
         if (navigating) {
             if (!ai.getNavigation().isDone()) {
                 ai.getNavigation().tick();
             }
             moveOnCurrentHeading();
         }
-
         tickAI();
         detectEquipmentUpdatesPublic();
         noPhysics = isSpectator();
         if (isSpectator()) {
             this.onGround = false;
         }
-
         pushEntities();
 
         if (npc.data().get(NPC.Metadata.PICKUP_ITEMS, false)) {
@@ -223,9 +217,8 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
     @Override
     public Component getTabListDisplayName() {
-        if (Setting.DISABLE_TABLIST.asBoolean()) {
+        if (Setting.DISABLE_TABLIST.asBoolean())
             return MutableComponent.create(new LiteralContents(""));
-        }
         return super.getTabListDisplayName();
     }
 
@@ -274,7 +267,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
     @Override
     public void knockback(double strength, double dx, double dz) {
-        NMS.callKnockbackEvent(npc, (float) strength, dx, dz, (evt) -> super.knockback((float) evt.getStrength(),
+        NMS.callKnockbackEvent(npc, (float) strength, dx, dz, evt -> super.knockback((float) evt.getStrength(),
                 evt.getKnockbackVector().getX(), evt.getKnockbackVector().getZ()));
     }
 
@@ -310,11 +303,10 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
     @Override
     public boolean onClimbable() {
-        if (npc == null || !npc.isFlyable()) {
+        if (npc == null || !npc.isFlyable())
             return super.onClimbable();
-        } else {
+        else
             return false;
-        }
     }
 
     @Override
@@ -415,9 +407,12 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
         @Override
         public boolean canSee(org.bukkit.entity.Entity entity) {
+<<<<<<< HEAD
             if (entity != null && (entity.getType().toString().contains("ITEM_FRAME"))) {
+=======
+            if (entity != null && entity.getType().name().contains("ITEM_FRAME"))
+>>>>>>> upstream/master
                 return false; // optimise for large maps in item frames
-            }
             return super.canSee(entity);
         }
 

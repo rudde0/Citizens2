@@ -115,9 +115,8 @@ public class CitizensNavigator implements Navigator, Runnable {
 
     @Override
     public NavigatorParameters getLocalParameters() {
-        if (!isNavigating()) {
+        if (!isNavigating())
             return defaultParams;
-        }
         return localParams;
     }
 
@@ -190,20 +189,22 @@ public class CitizensNavigator implements Navigator, Runnable {
         updateMountedStatus();
         if (!isNavigating() || !npc.isSpawned() || isPaused())
             return;
+
         Location npcLoc = npc.getStoredLocation();
         Location targetLoc = getTargetAsLocation();
+
         if (!npcLoc.getWorld().equals(targetLoc.getWorld()) || localParams.range() < npcLoc.distance(targetLoc)) {
             stopNavigating(CancelReason.STUCK);
             return;
         }
         if (updateStationaryStatus())
             return;
+
         updatePathfindingRange();
         boolean finished = executing.update();
         if (!finished) {
             localParams.run();
         }
-
         if (localParams.lookAtFunction() != null) {
             if (session == null) {
                 RotationTrait trait = npc.getOrAddTrait(RotationTrait.class);
@@ -212,7 +213,16 @@ public class CitizensNavigator implements Navigator, Runnable {
             }
             session.getSession().rotateToFace(localParams.lookAtFunction().apply(this));
         }
+<<<<<<< HEAD
 
+=======
+        if (localParams.destinationTeleportMargin() > 0
+                && npcLoc.distance(targetLoc) <= localParams.destinationTeleportMargin()) {
+            // TODO: easing?
+            npc.teleport(targetLoc, TeleportCause.PLUGIN);
+            finished = true;
+        }
+>>>>>>> upstream/master
         if (!finished)
             return;
 
@@ -276,6 +286,7 @@ public class CitizensNavigator implements Navigator, Runnable {
     public void setStraightLineTarget(Entity target, boolean aggressive) {
         if (!npc.isSpawned())
             throw new IllegalStateException("npc is not spawned");
+
         if (target == null) {
             cancelNavigation();
             return;
@@ -290,6 +301,7 @@ public class CitizensNavigator implements Navigator, Runnable {
     public void setStraightLineTarget(Location target) {
         if (!npc.isSpawned())
             throw new IllegalStateException("npc is not spawned");
+
         if (target == null) {
             cancelNavigation();
             return;
@@ -301,6 +313,7 @@ public class CitizensNavigator implements Navigator, Runnable {
     public void setTarget(Entity target, boolean aggressive) {
         if (!npc.isSpawned())
             throw new IllegalStateException("npc is not spawned");
+
         if (target == null) {
             cancelNavigation();
             return;
@@ -325,13 +338,12 @@ public class CitizensNavigator implements Navigator, Runnable {
             return;
         }
         setTarget(params -> {
-            if (npc.isFlyable()) {
+            if (npc.isFlyable())
                 return new FlyingAStarNavigationStrategy(npc, path, params);
-            } else if (params.useNewPathfinder() || !(npc.getEntity() instanceof LivingEntity)) {
+            else if (params.useNewPathfinder() || !(npc.getEntity() instanceof LivingEntity))
                 return new AStarNavigationStrategy(npc, path, params);
-            } else {
+            else
                 return new MCNavigationStrategy(npc, path, params);
-            }
         });
     }
 
@@ -343,15 +355,14 @@ public class CitizensNavigator implements Navigator, Runnable {
             cancelNavigation();
             return;
         }
-        final Location target = targetIn.clone();
+        Location target = targetIn.clone();
         setTarget(params -> {
-            if (npc.isFlyable()) {
+            if (npc.isFlyable())
                 return new FlyingAStarNavigationStrategy(npc, target, params);
-            } else if (params.useNewPathfinder() || !(npc.getEntity() instanceof LivingEntity)) {
+            else if (params.useNewPathfinder() || !(npc.getEntity() instanceof LivingEntity))
                 return new AStarNavigationStrategy(npc, target, params);
-            } else {
+            else
                 return new MCNavigationStrategy(npc, target, params);
-            }
         });
     }
 
@@ -371,12 +382,10 @@ public class CitizensNavigator implements Navigator, Runnable {
         }
         if (!SUPPORT_CHUNK_TICKETS || !CitizensAPI.hasImplementation() || !CitizensAPI.getPlugin().isEnabled())
             return;
-        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                updateTicket(isNavigating() ? executing.getTargetAsLocation() : null);
-            }
-        }, 10);
+
+        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(),
+                () -> updateTicket(isNavigating() ? executing.getTargetAsLocation() : null), 10);
+
         // Location loc = npc.getEntity().getLocation(STATIONARY_LOCATION);
         // NMS.look(npc.getEntity(), loc.getYaw(), 0);
     }
@@ -384,6 +393,7 @@ public class CitizensNavigator implements Navigator, Runnable {
     private void stopNavigating(CancelReason reason) {
         if (!isNavigating())
             return;
+
         if (reason == CancelReason.STUCK && Messaging.isDebugging()) {
             Messaging.debug(npc, "navigation ended, stuck", executing);
         }
@@ -392,7 +402,7 @@ public class CitizensNavigator implements Navigator, Runnable {
             session = null;
         }
         Iterator<NavigatorCallback> itr = localParams.callbacks().iterator();
-        List<NavigatorCallback> callbacks = new ArrayList<NavigatorCallback>();
+        List<NavigatorCallback> callbacks = new ArrayList<>();
         while (itr.hasNext()) {
             callbacks.add(itr.next());
             itr.remove();
@@ -459,9 +469,9 @@ public class CitizensNavigator implements Navigator, Runnable {
         if (!isNavigating() || true)
             return;
         Entity vehicle = NMS.getVehicle(npc.getEntity());
-        if (!(vehicle instanceof NPCHolder)) {
+        if (!(vehicle instanceof NPCHolder))
             return;
-        }
+
         NPC mount = ((NPCHolder) vehicle).getNPC();
         if (mount.getNavigator().isNavigating())
             return;
@@ -485,6 +495,7 @@ public class CitizensNavigator implements Navigator, Runnable {
     private boolean updateStationaryStatus() {
         if (localParams.stationaryTicks() < 0)
             return false;
+
         Location current = npc.getEntity().getLocation();
         if (!SpigotUtil.checkYSafe(current.getY(), current.getWorld())) {
             stopNavigating(CancelReason.STUCK);
@@ -507,29 +518,30 @@ public class CitizensNavigator implements Navigator, Runnable {
     private void updateTicket(Location target) {
         if (!SUPPORT_CHUNK_TICKETS || !CitizensAPI.hasImplementation() || !CitizensAPI.getPlugin().isEnabled())
             return;
-        if (target != null && this.activeTicket != null
-                && new ChunkCoord(target.getChunk()).equals(new ChunkCoord(this.activeTicket.getChunk()))) {
-            this.activeTicket = target.clone();
+
+        if (target != null && activeTicket != null
+                && new ChunkCoord(target.getChunk()).equals(new ChunkCoord(activeTicket.getChunk()))) {
+            activeTicket = target.clone();
             return;
         }
-        if (this.activeTicket != null) {
+        if (activeTicket != null) {
             try {
-                this.activeTicket.getChunk().removePluginChunkTicket(CitizensAPI.getPlugin());
+                activeTicket.getChunk().removePluginChunkTicket(CitizensAPI.getPlugin());
             } catch (NoSuchMethodError e) {
                 SUPPORT_CHUNK_TICKETS = false;
-                this.activeTicket = null;
+                activeTicket = null;
             }
         }
         if (target == null) {
-            this.activeTicket = null;
+            activeTicket = null;
             return;
         }
-        this.activeTicket = target.clone();
+        activeTicket = target.clone();
         try {
-            this.activeTicket.getChunk().addPluginChunkTicket(CitizensAPI.getPlugin());
+            activeTicket.getChunk().addPluginChunkTicket(CitizensAPI.getPlugin());
         } catch (NoSuchMethodError e) {
             SUPPORT_CHUNK_TICKETS = false;
-            this.activeTicket = null;
+            activeTicket = null;
         }
     }
 
