@@ -10,9 +10,9 @@ import org.bukkit.Bukkit;
 import com.google.common.collect.ForwardingSet;
 
 import net.citizensnpcs.api.event.NPCLinkToPlayerEvent;
+import net.citizensnpcs.api.event.NPCUnlinkFromPlayerEvent;
 /*
 import net.citizensnpcs.api.event.NPCSeenByPlayerEvent;
-import net.citizensnpcs.api.event.NPCUnlinkFromPlayerEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
 import net.minecraft.server.level.ServerPlayer;
