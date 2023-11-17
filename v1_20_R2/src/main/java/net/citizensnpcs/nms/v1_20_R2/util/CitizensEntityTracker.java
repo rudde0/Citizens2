@@ -1,7 +1,9 @@
 package net.citizensnpcs.nms.v1_20_R2.util;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 
@@ -10,6 +12,7 @@ import com.google.common.collect.ForwardingSet;
 import net.citizensnpcs.api.event.NPCLinkToPlayerEvent;
 /*
 import net.citizensnpcs.api.event.NPCSeenByPlayerEvent;
+import net.citizensnpcs.api.event.NPCUnlinkFromPlayerEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_20_R2.entity.EntityHumanNPC;
 import net.minecraft.server.level.ServerPlayer;
@@ -45,6 +48,16 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
                 @Override
                 protected Set<ServerPlayerConnection> delegate() {
                     return set;
+                }
+
+                @Override
+                public boolean remove(Object conn) {
+                    boolean removed = super.remove(conn);
+                    if (removed) {
+                        Bukkit.getPluginManager().callEvent(new NPCUnlinkFromPlayerEvent(((NPCHolder) tracker).getNPC(),
+                                ((ServerPlayerConnection) conn).getPlayer().getBukkitEntity()));
+                    }
+                    return removed;
                 }
             });
         } catch (Throwable e) {
@@ -97,6 +110,10 @@ public class CitizensEntityTracker extends ChunkMap.TrackedEntity {
         super.updatePlayer(entityplayer);
     }
      */
+
+    public static Collection<org.bukkit.entity.Entity> getSeenBy(TrackedEntity tracker) {
+        return tracker.seenBy.stream().map(c -> c.getPlayer().getBukkitEntity()).collect(Collectors.toSet());
+    }
 
     private static boolean getTrackDelta(TrackedEntity entry) {
         try {
