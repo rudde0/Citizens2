@@ -243,7 +243,7 @@ public class HologramTrait extends Trait {
             if (height == -1)
                 return;
 
-            NMS.linkTextInteraction(player, hologram.getEntity(), npc.getEntity(), (height + 0.3));
+            NMS.linkTextInteraction(player, hologram.getEntity(), npc.getEntity(), height);
         }
     }
 
