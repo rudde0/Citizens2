@@ -119,31 +119,6 @@ public class HologramTrait extends Trait {
         }
         hologramNPC.spawn(currentLoc.clone().add(0, getEntityHeight() + heightOffset, 0));
 
-        Matcher itemMatcher = ITEM_MATCHER.matcher(line);
-        if (itemMatcher.matches()) {
-            Material item = SpigotUtil.isUsing1_13API() ? Material.matchMaterial(itemMatcher.group(1), false)
-                    : Material.matchMaterial(itemMatcher.group(1));
-            ItemStack itemStack = new ItemStack(item, 1);
-            NPC itemNPC = registry.createNPCUsingItem(EntityType.DROPPED_ITEM, "", itemStack);
-            itemNPC.data().setPersistent(NPC.Metadata.NAMEPLATE_VISIBLE, false);
-            if (itemMatcher.group(2) != null) {
-                if (itemMatcher.group(2).charAt(1) == '{') {
-                    Bukkit.getUnsafe().modifyItemStack(itemStack, itemMatcher.group(2).substring(1));
-                    itemNPC.setItemProvider(() -> itemStack);
-                } else {
-                    itemNPC.getOrAddTrait(ScoreboardTrait.class)
-                            .setColor(Util.matchEnum(ChatColor.values(), itemMatcher.group(2).substring(1)));
-                }
-            }
-            itemNPC.getOrAddTrait(MountTrait.class).setMountedOn(hologramNPC.getUniqueId());
-            itemNPC.spawn(currentLoc);
-            NPC hn = hologramNPC;
-            itemNPC.addRunnable(() -> {
-                if (!itemNPC.isSpawned() || !hn.isSpawned()) {
-                    itemNPC.destroy();
-                }
-            });
-        }
         lastEntityHeight = getEntityHeight();
         return hologramNPC;
     }

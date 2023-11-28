@@ -97,7 +97,6 @@ public class CitizensNPC extends AbstractNPC {
             data().remove("selectors");
         }
 
-
         if (getEntity() instanceof Player) {
             PlayerUpdateTask.deregisterPlayer(getEntity());
         }
