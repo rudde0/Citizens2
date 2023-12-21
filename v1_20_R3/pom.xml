@@ -25,7 +25,7 @@
             <version>${craftbukkit.version}</version>
             <classifier>remapped-mojang</classifier>
             <scope>provided</scope>
-        </dependency> 
+        </dependency>
     </dependencies>
     
     <build>

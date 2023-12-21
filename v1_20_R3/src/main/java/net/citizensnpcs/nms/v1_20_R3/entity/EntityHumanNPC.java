@@ -118,7 +118,12 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
             return;
         }
         super.baseTick();
-        boolean navigating = npc.getNavigator().isNavigating() || ai.getMoveControl().hasWanted();
+
+        boolean navigating = (npc.getNavigator().isNavigating() ?
+                npc.getNavigator().getTargetAsLocation().distance(npc.getEntity().getLocation())
+                        > npc.getNavigator().getDefaultParameters().pathDistanceMargin()
+                : ai.getMoveControl().hasWanted());
+
         if (!navigating && getBukkitEntity() != null
                 && (!npc.hasTrait(Gravity.class) || npc.getOrAddTrait(Gravity.class).hasGravity())
                 && Util.isLoaded(getBukkitEntity().getLocation())
@@ -277,7 +282,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         xxa *= 0.98F;
         zza *= 0.98F;
         moveWithFallDamage(new Vec3(this.xxa, this.yya, this.zza));
-        NMS.setHeadAndBodyYaw(getBukkitEntity(), getYRot());
+        NMS.setHeadAndBodyYaw(getBukkitEntity(), getYRot() + 1.8f);
         if (jumpTicks > 0) {
             jumpTicks--;
         }

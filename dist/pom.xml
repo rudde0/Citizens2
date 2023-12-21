@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>net.citizensnpcs</groupId>
@@ -65,34 +65,6 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_8_R3</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_16_R3</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_18_R2</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_19_R3</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
                     <artifactId>citizens-v1_20_R3</artifactId>
                     <version>${project.version}</version>
                     <type>jar</type>
@@ -106,83 +78,6 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>citizens-main</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_8_R3</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_10_R1</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_11_R1</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_12_R1</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_13_R2</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_14_R1</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_15_R1</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_16_R3</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_17_R1</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_18_R2</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>citizens-v1_19_R3</artifactId>
                     <version>${project.version}</version>
                     <type>jar</type>
                     <scope>compile</scope>
