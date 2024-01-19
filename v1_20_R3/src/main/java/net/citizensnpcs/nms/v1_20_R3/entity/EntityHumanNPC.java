@@ -288,15 +288,17 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         }
     }
 
+
     private void moveWithFallDamage(Vec3 vec) {
-        double x = getX();
+        /*double x = getX();
         double y = getY();
-        double z = getZ();
+        double z = getZ();*/
         travel(vec);
-        if (!npc.isProtected()) {
+        /*if (!npc.isProtected()) {
             doCheckFallDamage(getX() - x, getY() - y, getZ() - z, onGround);
-        }
+        }*/
     }
+
 
     @Override
     public boolean onClimbable() {
