@@ -273,7 +273,7 @@ public class CommandTrait extends Trait {
                         command -> (command.hand == hand || command.hand == Hand.BOTH)));
                 if (executionMode == ExecutionMode.RANDOM) {
                     if (commandList.size() > 0) {
-                        runCommand(player, commandList.get(Util.getFastRandom().nextInt(commandList.size())));
+                        runCommand(player, hand, commandList.get(Util.getFastRandom().nextInt(commandList.size())));
                     }
                     return;
                 }
@@ -286,28 +286,26 @@ public class CommandTrait extends Trait {
                     executionErrors.put(player.getUniqueId().toString(), EnumSet.noneOf(CommandTraitError.class));
                 }
                 for (NPCCommand command : commandList) {
-                    if (executionMode == ExecutionMode.SEQUENTIAL) {
-                        PlayerNPCCommand info = playerTracking.get(player.getUniqueId());
-                        if (info != null && info.lastUsedHand != hand) {
+                    PlayerNPCCommand info = null;
+                    if (executionMode == ExecutionMode.SEQUENTIAL
+                            && (info = playerTracking.get(player.getUniqueId())) != null) {
+                        if (info.lastUsedHand != hand) {
                             info.lastUsedHand = hand;
                             info.lastUsedId = -1;
                         }
-                        if (info != null && command.id <= info.lastUsedId) {
-                            if (info.lastUsedId == max) {
-                                info.lastUsedId = -1;
-                            } else {
+                        if (command.id <= info.lastUsedId) {
+                            if (info.lastUsedId != max)
                                 continue;
-                            }
+                            info.lastUsedId = -1;
                         }
                     }
-                    runCommand(player, command);
-                    if (executionMode == ExecutionMode.SEQUENTIAL || charged != null && !charged) {
+                    runCommand(player, hand, command);
+                    if (executionMode == ExecutionMode.SEQUENTIAL || (charged != null && !charged))
                         break;
-                    }
                 }
             }
 
-            private void runCommand(Player player, NPCCommand command) {
+            private void runCommand(Player player, Hand hand, NPCCommand command) {
                 Runnable runnable = () -> {
                     PlayerNPCCommand info = playerTracking.get(player.getUniqueId());
                     if (info == null && (executionMode == ExecutionMode.SEQUENTIAL
@@ -322,7 +320,7 @@ public class CommandTrait extends Trait {
                             return;
                         }
                     }
-                    if (info != null && !info.canUse(CommandTrait.this, player, command))
+                    if (info != null && !info.canUse(CommandTrait.this, player, hand, command))
                         return;
 
                     if (charged == null) {
@@ -777,7 +775,7 @@ public class CommandTrait extends Trait {
         public PlayerNPCCommand() {
         }
 
-        public boolean canUse(CommandTrait trait, Player player, NPCCommand command) {
+        public boolean canUse(CommandTrait trait, Player player, Hand hand, NPCCommand command) {
             for (String perm : command.perms) {
                 if (!player.hasPermission(perm)) {
                     trait.sendErrorMessage(player, CommandTraitError.NO_PERMISSION, null);
@@ -826,6 +824,7 @@ public class CommandTrait extends Trait {
                 nUsed.put(commandKey, timesUsed + 1);
             }
             lastUsedId = command.id;
+            lastUsedHand = hand;
             return true;
         }
 
