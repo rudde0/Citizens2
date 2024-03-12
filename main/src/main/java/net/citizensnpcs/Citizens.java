@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -53,9 +52,7 @@ import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCDataStore;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.api.npc.SimpleNPCDataStore;
-import net.citizensnpcs.api.scripting.EventRegistrar;
-import net.citizensnpcs.api.scripting.ObjectProvider;
-import net.citizensnpcs.api.scripting.ScriptCompiler;
+import net.citizensnpcs.api.npc.templates.TemplateRegistry;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.TraitFactory;
 import net.citizensnpcs.api.trait.TraitInfo;
@@ -75,12 +72,10 @@ import net.citizensnpcs.editor.Editor;
 import net.citizensnpcs.npc.CitizensNPCRegistry;
 import net.citizensnpcs.npc.CitizensTraitFactory;
 import net.citizensnpcs.npc.NPCSelector;
-import net.citizensnpcs.npc.Template;
 import net.citizensnpcs.npc.profile.ProfileFetcher;
 import net.citizensnpcs.npc.skin.Skin;
-import net.citizensnpcs.trait.ClickRedirectTrait;
-import net.citizensnpcs.trait.CommandTrait;
 import net.citizensnpcs.trait.ShopTrait;
+import net.citizensnpcs.trait.shop.StoredShops;
 import net.citizensnpcs.util.Messages;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.PlayerUpdateTask;
@@ -152,6 +147,7 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
     private NPCSelector selector;
     private StoredShops shops;
     private final Map<String, NPCRegistry> storedRegistries = Maps.newHashMap();
+    private TemplateRegistry templateRegistry;
     private CitizensTraitFactory traitFactory;
 
     @Override
@@ -276,6 +272,11 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
     }
 
     @Override
+    public TemplateRegistry getTemplateRegistry() {
+        return templateRegistry;
+    }
+
+    @Override
     public TraitFactory getTraitFactory() {
         return traitFactory;
     }
@@ -287,8 +288,8 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         lib.addMavenCentral();
         lib.setLogLevel(LogLevel.WARN);
         // Unfortunately, transitive dependency management is not supported in this library.
-        lib.loadLibrary(Library.builder().groupId("ch{}ethz{}globis{}phtree").artifactId("phtree").version("2.8.0")
-                .relocate("ch{}ethz{}globis{}phtree", "clib{}phtree").build());
+        lib.loadLibrary(
+                Library.builder().groupId("ch{}ethz{}globis{}phtree").artifactId("phtree").version("2.8.0").build());
         lib.loadLibrary(Library.builder().groupId("net{}sf{}trove4j").artifactId("trove4j").version("3.0.3")
                 .relocate("gnu{}trove", "clib{}trove").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-minimessage")
@@ -349,13 +350,14 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         Editor.leaveAll();
         despawnNPCs(saveOnDisable);
         HandlerList.unregisterAll(this);
+
+        templateRegistry = null;
         npcRegistry = null;
         locationLookup = null;
         enabled = false;
         saveOnDisable = true;
         ProfileFetcher.shutdown();
         Skin.clearCache();
-        Template.shutdown();
         NMS.shutdown();
         CitizensAPI.shutdown();
     }
@@ -381,8 +383,6 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
-        registerScriptHelpers();
-
         saves = createStorage(getDataFolder());
         shops = new StoredShops(new YamlStorage(new File(getDataFolder(), "shops.yml")));
         if (saves == null || !shops.loadFromDisk()) {
@@ -397,15 +397,10 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         traitFactory = new CitizensTraitFactory(this);
         traitFactory.registerTrait(TraitInfo.create(ShopTrait.class).withSupplier(() -> new ShopTrait(shops)));
         selector = new NPCSelector(this);
+        templateRegistry = new TemplateRegistry(new File(this.getDataFolder(), "templates").toPath());
 
         Bukkit.getPluginManager().registerEvents(new EventListen(), this);
         Bukkit.getPluginManager().registerEvents(new Placeholders(), this);
-        Placeholders.registerNPCPlaceholder(Pattern.compile("command_[a-zA-Z_0-9]+"), (npc, sender, input) -> {
-            npc = npc.hasTrait(ClickRedirectTrait.class) ? npc.getTraitNullable(ClickRedirectTrait.class).getNPC()
-                    : npc;
-            CommandTrait trait = npc.getTraitNullable(CommandTrait.class);
-            return trait == null ? "" : trait.fillPlaceholder(sender, input);
-        });
 
         Plugin papi = Bukkit.getPluginManager().getPlugin("PlaceholderAPI");
         if (papi != null && papi.isEnabled()) {
@@ -415,7 +410,6 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
 
         registerCommands();
         NMS.load(commands);
-        Template.migrate();
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         commands.registerTabCompletion(this);
         commands.setTranslationPrefixProvider(cmd -> "citizens.commands." + cmd.aliases()[0]
@@ -455,12 +449,6 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         commands.register(WaypointCommands.class);
     }
 
-    private void registerScriptHelpers() {
-        ScriptCompiler compiler = CitizensAPI.getScriptCompiler();
-        compiler.registerGlobalContextProvider(new EventRegistrar(this));
-        compiler.registerGlobalContextProvider(new ObjectProvider("plugin", this));
-    }
-
     public void reload() throws NPCLoadException {
         Editor.leaveAll();
         config.reload();
@@ -470,13 +458,13 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
 
         getServer().getPluginManager().callEvent(new CitizensPreReloadEvent());
 
+        templateRegistry = new TemplateRegistry(new File(this.getDataFolder(), "templates").toPath());
+
         saves.reloadFromSource();
         saves.loadInto(npcRegistry);
 
         shops.loadFromDisk();
         shops.load();
-
-        Template.shutdown();
 
         getServer().getPluginManager().callEvent(new CitizensReloadEvent());
     }
@@ -514,9 +502,6 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
 
     private void setupTranslator() {
         Locale locale = Locale.getDefault();
-        if (!locale.getLanguage().equals("en")) {
-            Messaging.logTr(Messages.CONTRIBUTE_TO_TRANSLATION_PROMPT);
-        }
         String setting = Setting.LOCALE.asString();
         if (!setting.isEmpty()) {
             String[] parts = setting.split("[\\._]");
@@ -535,18 +520,16 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
             }
         }
         Translator.setInstance(new File(getDataFolder(), "lang"), locale);
+        if (!locale.getLanguage().equals("en")) {
+            Messaging.logTr(Messages.CONTRIBUTE_TO_TRANSLATION_PROMPT);
+        }
     }
 
     private void startMetrics() {
         try {
             Metrics metrics = new Metrics(this, 2463);
-            metrics.addCustomChart(new Metrics.SingleLineChart("total_npcs", () -> {
-                if (npcRegistry == null)
-                    return 0;
-                return Iterables.size(npcRegistry);
-            }));
-            metrics.addCustomChart(new Metrics.SingleLineChart("using_templates",
-                    () -> Math.min(1, Iterables.size(Template.getTemplates()))));
+            metrics.addCustomChart(new Metrics.SingleLineChart("total_npcs",
+                    () -> npcRegistry == null ? 0 : Iterables.size(npcRegistry)));
             metrics.addCustomChart(new Metrics.SimplePie("locale", () -> Locale.getDefault().getLanguage()));
             metrics.addCustomChart(new Metrics.AdvancedPie("traits", () -> {
                 Map<String, Integer> res = Maps.newHashMap();

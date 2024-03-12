@@ -663,6 +663,10 @@ public class NMS {
         return BRIDGE.isOnGround(entity);
     }
 
+    public static boolean isSneaking(Entity entity) {
+        return BRIDGE.isSneaking(entity);
+    }
+
     public static boolean isSolid(Block in) {
         return BRIDGE.isSolid(in);
     }
@@ -724,12 +728,7 @@ public class NMS {
     }
 
     public static Runnable playerTicker(Player entity) {
-        Runnable tick = BRIDGE.playerTicker(entity);
-        return () -> {
-            if (entity.isValid()) {
-                tick.run();
-            }
-        };
+        return BRIDGE.playerTicker(entity instanceof NPCHolder ? ((NPCHolder) entity).getNPC() : null, entity);
     }
 
     public static void registerEntityClass(Class<?> clazz) {

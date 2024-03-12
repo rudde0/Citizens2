@@ -10,7 +10,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -51,9 +50,8 @@ public class ItemAction extends NPCShopAction {
         this.items = items;
     }
 
-    private boolean containsItems(Inventory source, int repeats, boolean modify) {
+    private boolean containsItems(ItemStack[] contents, int repeats, boolean modify) {
         List<Integer> req = items.stream().map(i -> i.getAmount() * repeats).collect(Collectors.toList());
-        ItemStack[] contents = source.getContents();
         for (int i = 0; i < contents.length; i++) {
             ItemStack toMatch = contents[i];
             if (toMatch == null || toMatch.getType() == Material.AIR || tooDamaged(toMatch))
@@ -78,9 +76,9 @@ public class ItemAction extends NPCShopAction {
                 }
                 if (modify) {
                     if (toMatch == null) {
-                        source.clear(i);
+                        contents[i] = null;
                     } else {
-                        source.setItem(i, toMatch.clone());
+                        contents[i] = toMatch.clone();
                     }
                 }
                 req.set(j, remaining - taken);
@@ -106,16 +104,14 @@ public class ItemAction extends NPCShopAction {
     }
 
     @Override
-    public int getMaxRepeats(Entity entity) {
+    public int getMaxRepeats(Entity entity, ItemStack[] inventory) {
         if (!(entity instanceof InventoryHolder))
             return 0;
 
-        Inventory source = ((InventoryHolder) entity).getInventory();
         List<Integer> req = items.stream().map(ItemStack::getAmount).collect(Collectors.toList());
         List<Integer> has = items.stream().map(i -> 0).collect(Collectors.toList());
-        ItemStack[] contents = source.getContents();
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack toMatch = contents[i];
+        for (int i = 0; i < inventory.length; i++) {
+            ItemStack toMatch = inventory[i];
             if (toMatch == null || toMatch.getType() == Material.AIR || tooDamaged(toMatch))
                 continue;
 
@@ -127,9 +123,9 @@ public class ItemAction extends NPCShopAction {
                 int remaining = req.get(j);
                 int taken = toMatch.getAmount() > remaining ? remaining : toMatch.getAmount();
                 has.set(j, has.get(j) + taken);
-                if (toMatch.getAmount() - taken <= 0) {
+                if (toMatch.getAmount() - taken <= 0)
                     break;
-                }
+
                 toMatch.setAmount(toMatch.getAmount() - taken);
             }
         }
@@ -138,13 +134,12 @@ public class ItemAction extends NPCShopAction {
     }
 
     @Override
-    public Transaction grant(Entity entity, int repeats) {
+    public Transaction grant(Entity entity, ItemStack[] inventory, int repeats) {
         if (!(entity instanceof InventoryHolder))
             return Transaction.fail();
-        Inventory source = ((InventoryHolder) entity).getInventory();
         return Transaction.create(() -> {
             int free = 0;
-            for (ItemStack stack : source.getContents()) {
+            for (ItemStack stack : inventory) {
                 if (stack == null || stack.getType() == Material.AIR) {
                     free++;
                     continue;
@@ -153,11 +148,26 @@ public class ItemAction extends NPCShopAction {
             return free >= items.size() * repeats;
         }, () -> {
             for (int i = 0; i < repeats; i++) {
-                source.addItem(items.stream().map(ItemStack::clone).toArray(ItemStack[]::new));
+                List<ItemStack> toAdd = items.stream().map(ItemStack::clone).collect(Collectors.toList());
+                for (int j = 0; j < inventory.length; j++) {
+                    if (toAdd.isEmpty())
+                        break;
+                    if (inventory[j] == null || inventory[j].getType() == Material.AIR) {
+                        inventory[j] = toAdd.remove(toAdd.size() - 1);
+                    }
+                }
             }
         }, () -> {
             for (int i = 0; i < repeats; i++) {
-                source.removeItem(items.stream().map(ItemStack::clone).toArray(ItemStack[]::new));
+                List<ItemStack> toRemove = items.stream().map(ItemStack::clone).collect(Collectors.toList());
+                for (int j = 0; j < inventory.length; j++) {
+                    if (toRemove.isEmpty())
+                        break;
+                    if (toRemove.get(toRemove.size() - 1).equals(inventory[j])) {
+                        inventory[j] = null;
+                        toRemove.remove(toRemove.size() - 1);
+                    }
+                }
             }
         });
     }
@@ -185,9 +195,10 @@ public class ItemAction extends NPCShopAction {
                 if (i < parts.length - 1) {
                     if (!(acc instanceof CompoundTag) || !(cmp instanceof CompoundTag))
                         return false;
-                    if (parts[i].equals(acc.getName()) && acc.getName().equals(cmp.getName())) {
+
+                    if (parts[i].equals(acc.getName()) && acc.getName().equals(cmp.getName()))
                         continue;
-                    }
+
                     acc = ((CompoundTag) acc).getValue().get(parts[i]);
                     cmp = ((CompoundTag) cmp).getValue().get(parts[i]);
                     continue;
@@ -201,15 +212,32 @@ public class ItemAction extends NPCShopAction {
     }
 
     @Override
-    public Transaction take(Entity entity, int repeats) {
+    public Transaction take(Entity entity, ItemStack[] inventory, int repeats) {
         if (!(entity instanceof InventoryHolder))
             return Transaction.fail();
 
-        Inventory source = ((InventoryHolder) entity).getInventory();
-        return Transaction.create(() -> containsItems(source, repeats, false), () -> {
-            containsItems(source, repeats, true);
+        return Transaction.create(() -> containsItems(inventory, repeats, false), () -> {
+            containsItems(inventory, repeats, true);
         }, () -> {
-            source.addItem(items.stream().map(ItemStack::clone).toArray(ItemStack[]::new));
+            for (ItemStack item : items.stream().map(ItemStack::clone).toArray(ItemStack[]::new)) {
+                for (int i = 0; i < inventory.length; i++) {
+                    ItemStack stack = inventory[i];
+                    if (stack == null || stack.getType() == Material.AIR) {
+                        inventory[i] = item;
+                        break;
+                    }
+                    if (stack.getMaxStackSize() > stack.getAmount() && matches(stack, item)) {
+                        int free = stack.getMaxStackSize() - stack.getAmount();
+                        if (item.getAmount() > free) {
+                            item.setAmount(item.getAmount() - free);
+                            stack.setAmount(stack.getMaxStackSize());
+                        } else {
+                            stack.setAmount(stack.getAmount() + item.getAmount());
+                            break;
+                        }
+                    }
+                }
+            }
         });
     }
 

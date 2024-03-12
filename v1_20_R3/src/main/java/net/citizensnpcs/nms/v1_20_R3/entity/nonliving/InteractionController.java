@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_20_R3.CraftServer;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftInteraction;
-import org.bukkit.util.Vector;
 
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_20_R3.entity.MobEntityController;
@@ -78,14 +77,6 @@ public class InteractionController extends MobEntityController {
         }
 
         @Override
-        public void push(double x, double y, double z) {
-            Vector vector = Util.callPushEvent(npc, x, y, z);
-            if (vector != null) {
-                super.push(vector.getX(), vector.getY(), vector.getZ());
-            }
-        }
-
-        @Override
         public void push(Entity entity) {
             // this method is called by both the entities involved - cancelling
             // it will not stop the NPC from moving.
@@ -109,10 +100,9 @@ public class InteractionController extends MobEntityController {
 
         @Override
         public void tick() {
+            super.tick();
             if (npc != null) {
                 npc.update();
-            } else {
-                super.tick();
             }
         }
 

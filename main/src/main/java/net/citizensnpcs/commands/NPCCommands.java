@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -56,7 +57,6 @@ import com.google.common.io.BaseEncoding;
 
 import net.citizensnpcs.Citizens;
 import net.citizensnpcs.Settings.Setting;
-import net.citizensnpcs.StoredShops;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.ai.speech.SpeechContext;
 import net.citizensnpcs.api.ai.tree.StatusMapper;
@@ -85,6 +85,8 @@ import net.citizensnpcs.api.npc.MemoryNPCDataStore;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPC.NPCUpdate;
 import net.citizensnpcs.api.npc.NPCRegistry;
+import net.citizensnpcs.api.npc.templates.Template;
+import net.citizensnpcs.api.npc.templates.TemplateRegistry;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.trait.Equipment;
 import net.citizensnpcs.api.trait.trait.Equipment.EquipmentSlot;
@@ -105,7 +107,6 @@ import net.citizensnpcs.commands.history.RemoveNPCHistoryItem;
 import net.citizensnpcs.editor.Editor;
 import net.citizensnpcs.npc.EntityControllers;
 import net.citizensnpcs.npc.NPCSelector;
-import net.citizensnpcs.npc.Template;
 import net.citizensnpcs.trait.Age;
 import net.citizensnpcs.trait.Anchors;
 import net.citizensnpcs.trait.ArmorStandTrait;
@@ -150,6 +151,7 @@ import net.citizensnpcs.trait.SlimeSize;
 import net.citizensnpcs.trait.VillagerProfession;
 import net.citizensnpcs.trait.WitherTrait;
 import net.citizensnpcs.trait.WolfModifiers;
+import net.citizensnpcs.trait.shop.StoredShops;
 import net.citizensnpcs.trait.waypoint.Waypoints;
 import net.citizensnpcs.util.Anchor;
 import net.citizensnpcs.util.Messages;
@@ -164,11 +166,13 @@ public class NPCCommands {
     private final CommandHistory history;
     private final NPCSelector selector;
     private final StoredShops shops;
+    private final TemplateRegistry templateRegistry;
     private final NPCRegistry temporaryRegistry;
 
     public NPCCommands(Citizens plugin) {
         selector = plugin.getNPCSelector();
         shops = plugin.getShops();
+        templateRegistry = plugin.getTemplateRegistry();
         temporaryRegistry = CitizensAPI.createCitizensBackedNPCRegistry(new MemoryNPCDataStore());
         history = new CommandHistory(selector);
     }
@@ -194,7 +198,6 @@ public class NPCCommands {
             aliases = { "npc" },
             usage = "age [age] (-l(ock))",
             desc = "",
-            help = "citizens.commands.npc.age.help",
             flags = "l",
             modifiers = { "age" },
             min = 1,
@@ -461,22 +464,24 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
-            usage = "command|cmd (add [command] | remove [id|all] | permissions [permissions] | sequential | cycle | random | clearerror [type] (name|uuid) | errormsg [type] [msg] | persistsequence [true|false] | cost [cost] (id) | expcost [cost] (id) | itemcost (id)) (-s(hift)) (-l[eft]/-r[ight]) (-p[layer] -o[p]), --cooldown --gcooldown [seconds] --delay [ticks] --permissions [perms] --n [max # of uses]",
+            usage = "command|cmd (add [command] | remove [id|all] | permissions [permissions] | sequential | cycle | random | forgetplayer (uuid) | clearerror [type] (name|uuid) | errormsg [type] [msg] | persistsequence [true|false] | cost [cost] (id) | expcost [cost] (id) | itemcost (id)) (-s(hift)) (-l[eft]/-r[ight]) (-p[layer] -o[p]), --cooldown --gcooldown [seconds] --delay [ticks] --permissions [perms] --n [max # of uses]",
             desc = "",
-            help = "citizens.commands.npc.command.help",
             modifiers = { "command", "cmd" },
             min = 1,
             flags = "lrpos",
             permission = "citizens.npc.command")
     public void command(CommandContext args, CommandSender sender, NPC npc,
             @Flag(value = { "permissions", "permission" }) String permissions,
+            @Flag(value = "cost", defValue = "-1") Double cost,
+            @Flag(value = "expcost", defValue = "-1") Integer experienceCost,
             @Flag(value = "cooldown", defValue = "0") Duration cooldown,
             @Flag(value = "gcooldown", defValue = "0") Duration gcooldown, @Flag(value = "n", defValue = "-1") int n,
             @Flag(value = "delay", defValue = "0") Duration delay,
             @Arg(
                     value = 1,
                     completions = { "add", "remove", "permissions", "persistsequence", "sequential", "cycle", "random",
-                            "hideerrors", "errormsg", "clearerror", "expcost", "itemcost", "cost" }) String action)
+                            "forgetplayer", "hideerrors", "errormsg", "clearerror", "expcost", "itemcost",
+                            "cost" }) String action)
             throws CommandException {
         CommandTrait commands = npc.getOrAddTrait(CommandTrait.class);
         if (args.argsLength() == 1) {
@@ -504,11 +509,26 @@ public class NPCCommands {
             try {
                 int id = commands.addCommand(new NPCCommandBuilder(command, hand).addPerms(perms)
                         .player(args.hasFlag('p') || args.hasFlag('o')).op(args.hasFlag('o')).cooldown(cooldown)
-                        .globalCooldown(gcooldown).n(n).delay(delay));
+                        .cost(cost).experienceCost(experienceCost).globalCooldown(gcooldown).n(n).delay(delay));
                 Messaging.sendTr(sender, Messages.COMMAND_ADDED, command, id);
             } catch (NumberFormatException ex) {
                 throw new CommandException(CommandMessages.INVALID_NUMBER);
             }
+        } else if (action.equalsIgnoreCase("forgetplayer")) {
+            if (args.argsLength() < 3) {
+                commands.clearPlayerHistory(null);
+                Messaging.sendTr(sender, Messages.NPC_COMMAND_ALL_PLAYERS_FORGOTTEN, npc.getName());
+                return;
+            }
+            String raw = args.getString(2);
+            OfflinePlayer who = Bukkit.getPlayerExact(raw);
+            if (who == null) {
+                who = Bukkit.getOfflinePlayer(UUID.fromString(raw));
+            }
+            if (who == null || !who.hasPlayedBefore())
+                throw new CommandException(Messages.NPC_COMMAND_INVALID_PLAYER, raw);
+            commands.clearPlayerHistory(who.getUniqueId());
+            Messaging.sendTr(sender, Messages.NPC_COMMAND_PLAYER_FORGOTTEN, who.getUniqueId());
         } else if (action.equalsIgnoreCase("clearerror")) {
             if (args.argsLength() < 3)
                 throw new CommandException(Messages.NPC_COMMAND_INVALID_ERROR_MESSAGE,
@@ -518,9 +538,21 @@ public class NPCCommands {
             if (which == null)
                 throw new CommandException(Messages.NPC_COMMAND_INVALID_ERROR_MESSAGE,
                         Util.listValuesPretty(CommandTraitError.values()));
-
-            commands.clearHistory(which, args.argsLength() > 3 ? args.getString(3) : null);
-            Messaging.send(sender, Messages.NPC_COMMAND_ERRORS_CLEARED, Util.prettyEnum(which));
+            if (args.argsLength() < 4) {
+                commands.clearHistory(which, null);
+                Messaging.sendTr(sender, Messages.NPC_COMMAND_ALL_ERRORS_CLEARED, npc.getName(),
+                        Util.prettyEnum(which));
+                return;
+            }
+            String raw = args.getString(3);
+            OfflinePlayer who = Bukkit.getPlayerExact(raw);
+            if (who == null) {
+                who = Bukkit.getOfflinePlayer(UUID.fromString(raw));
+            }
+            if (who == null || !who.hasPlayedBefore())
+                throw new CommandException(Messages.NPC_COMMAND_INVALID_PLAYER, raw);
+            commands.clearHistory(which, who.getUniqueId());
+            Messaging.sendTr(sender, Messages.NPC_COMMAND_ERRORS_CLEARED, Util.prettyEnum(which), who.getUniqueId());
         } else if (action.equalsIgnoreCase("sequential")) {
             commands.setExecutionMode(commands.getExecutionMode() == ExecutionMode.SEQUENTIAL ? ExecutionMode.LINEAR
                     : ExecutionMode.SEQUENTIAL);
@@ -563,25 +595,13 @@ public class NPCCommands {
         } else if (action.equalsIgnoreCase("cost")) {
             if (args.argsLength() == 2)
                 throw new CommandException(Messages.COMMAND_MISSING_COST);
-            if (args.argsLength() == 4) {
-                commands.setCost(args.getDouble(2), args.getInteger(3));
-                Messaging.sendTr(sender, Messages.COMMAND_INDIVIDUAL_COST_SET,
-                        args.getDouble(2) == -1 ? "-1 (default)" : args.getDouble(2), args.getInteger(3));
-            } else {
-                commands.setCost(args.getDouble(2));
-                Messaging.sendTr(sender, Messages.COMMAND_COST_SET, args.getDouble(2));
-            }
+            commands.setCost(args.getDouble(2));
+            Messaging.sendTr(sender, Messages.COMMAND_COST_SET, args.getDouble(2));
         } else if (action.equalsIgnoreCase("expcost")) {
             if (args.argsLength() == 2)
                 throw new CommandException(Messages.COMMAND_MISSING_COST);
-            if (args.argsLength() == 4) {
-                commands.setExperienceCost(args.getInteger(2), args.getInteger(3));
-                Messaging.sendTr(sender, Messages.COMMAND_INDIVIDUAL_EXPERIENCE_COST_SET,
-                        args.getInteger(2) == -1 ? "-1 (default)" : args.getInteger(2), args.getInteger(3));
-            } else {
-                commands.setExperienceCost(args.getInteger(2));
-                Messaging.sendTr(sender, Messages.COMMAND_EXPERIENCE_COST_SET, args.getInteger(2));
-            }
+            commands.setExperienceCost(args.getInteger(2));
+            Messaging.sendTr(sender, Messages.COMMAND_EXPERIENCE_COST_SET, args.getInteger(2));
         } else if (action.equalsIgnoreCase("hideerrors")) {
             commands.setHideErrorMessages(!commands.isHideErrorMessages());
             Messaging.sendTr(sender, commands.isHideErrorMessages() ? Messages.COMMAND_HIDE_ERROR_MESSAGES_SET
@@ -824,11 +844,18 @@ public class NPCCommands {
             Iterable<String> parts = Splitter.on(',').trimResults().split(templateName);
             StringBuilder builder = new StringBuilder();
             for (String part : parts) {
-                Template template = Template.byName(part);
-                if (template == null) {
+                if (part.contains(":")) {
+                    Template template = templateRegistry.getTemplateByNamespacedKey(part);
+                    if (template == null)
+                        continue;
+                    template.apply(npc);
+                    builder.append(StringHelper.wrap(part) + ", ");
                     continue;
                 }
-                template.apply(npc);
+                Collection<Template> templates = templateRegistry.getTemplates(part);
+                if (templates.size() != 1)
+                    continue;
+                templates.iterator().next().apply(npc);
                 builder.append(StringHelper.wrap(part) + ", ");
             }
             if (builder.length() > 0) {
@@ -1265,7 +1292,6 @@ public class NPCCommands {
             aliases = { "npc" },
             usage = "horse|donkey|mule (--color color) (--type type) (--style style) (-cb)",
             desc = "",
-            help = "Use the -c flag to make the NPC have a chest, or the -b flag to stop them from having a chest.",
             modifiers = { "horse", "donkey", "mule" },
             min = 1,
             max = 1,
@@ -1999,9 +2025,9 @@ public class NPCCommands {
             permission = "citizens.npc.passive")
     public void passive(CommandContext args, CommandSender sender, NPC npc, @Flag("set") Boolean set)
             throws CommandException {
-        boolean passive = set != null ? set : !npc.data().get(NPC.Metadata.DAMAGE_OTHERS, true);
-        npc.data().setPersistent(NPC.Metadata.DAMAGE_OTHERS, passive);
-        Messaging.sendTr(sender, passive ? Messages.PASSIVE_SET : Messages.PASSIVE_UNSET, npc.getName());
+        boolean damageOthers = set != null ? set : !npc.data().get(NPC.Metadata.DAMAGE_OTHERS, true);
+        npc.data().setPersistent(NPC.Metadata.DAMAGE_OTHERS, damageOthers);
+        Messaging.sendTr(sender, damageOthers ? Messages.PASSIVE_UNSET : Messages.PASSIVE_SET, npc.getName());
     }
 
     @Command(

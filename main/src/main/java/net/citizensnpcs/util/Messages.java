@@ -62,8 +62,6 @@ public class Messages {
     public static final String COMMAND_HELP_HEADER = "citizens.commands.help.header";
     public static final String COMMAND_HIDE_ERROR_MESSAGES_SET = "citizens.commands.npc.command.hide-error-messages-set";
     public static final String COMMAND_HIDE_ERROR_MESSAGES_UNSET = "citizens.commands.npc.command.hide-error-messages-unset";
-    public static final String COMMAND_INDIVIDUAL_COST_SET = "citizens.commands.npc.command.individual-cost-set";
-    public static final String COMMAND_INDIVIDUAL_EXPERIENCE_COST_SET = "citizens.commands.npc.command.individual-experience-cost-set";
     public static final String COMMAND_INVALID_MOBTYPE = "citizens.commands.invalid-mobtype";
     public static final String COMMAND_LEFT_HAND_HEADER = "citizens.commands.npc.command.left-hand-header";
     public static final String COMMAND_MISSING = "citizens.commands.help.command-missing";
@@ -72,7 +70,6 @@ public class Messages {
     public static final String COMMAND_PAGE_MISSING = "citizens.commands.page-missing";
     public static final String COMMAND_REMOVED = "citizens.commands.npc.command.command-removed";
     public static final String COMMAND_RIGHT_HAND_HEADER = "citizens.commands.npc.command.right-hand-header";
-    public static final String COMMAND_SAVE_HELP = "citizens.commands.citizens.save.help";
     public static final String COMMAND_TEMPORARY_PERMISSIONS_SET = "citizens.commands.npc.command.temporary-permissions-set";
     public static final String COMMAND_TRIGGER_ADDED = "citizens.editors.waypoints.triggers.command.added";
     public static final String COMMAND_TRIGGER_PROMPT = "citizens.editors.waypoints.triggers.command.prompt";
@@ -271,8 +268,12 @@ public class Messages {
     public static final String NOT_USING_MINECRAFT_AI = "citizens.commands.npc.ai.stopped";
     public static final String NPC_ALREADY_SELECTED = "citizens.commands.npc.select.already-selected";
     public static final String NPC_ALREADY_SPAWNED = "citizens.commands.npc.spawn.already-spawned";
+    public static final String NPC_COMMAND_ALL_ERRORS_CLEARED = "citizens.commands.npc.command.all-errors-cleared";
+    public static final String NPC_COMMAND_ALL_PLAYERS_FORGOTTEN = "citizens.commands.npc.command.all-players-forgotten";
     public static final String NPC_COMMAND_ERRORS_CLEARED = "citizens.commands.npc.command.errors-cleared";
     public static final String NPC_COMMAND_INVALID_ERROR_MESSAGE = "citizens.commands.npc.command.invalid-error-message";
+    public static final String NPC_COMMAND_INVALID_PLAYER = "citizens.commands.npc.command.invalid-player";
+    public static final String NPC_COMMAND_PLAYER_FORGOTTEN = "citizens.commands.npc.command.player-forgotten";
     public static final String NPC_COPIED = "citizens.commands.npc.copy.copied";
     public static final String NPC_CREATE_INVALID_MOBTYPE = "citizens.commands.npc.create.invalid-mobtype";
     public static final String NPC_CREATE_MISSING_MOBTYPE = "citizens.commands.npc.create.mobtype-missing";
@@ -397,10 +398,12 @@ public class Messages {
     public static final String TELEPORTED_TO_NPC = "citizens.commands.npc.tp.teleported";
     public static final String TEMPLATE_APPLIED = "citizens.commands.template.applied";
     public static final String TEMPLATE_CONFLICT = "citizens.commands.template.conflict";
-    public static final String TEMPLATE_CREATED = "citizens.commands.template.created";
     public static final String TEMPLATE_DELETED = "citizens.commands.template.delete.deleted";
     public static final String TEMPLATE_LIST_HEADER = "citizens.commands.template.list.header";
     public static final String TEMPLATE_MISSING = "citizens.commands.template.missing";
+    public static final String TEMPLATE_NAMESPACE_EXISTS = "citizens.commands.template.namespace-already-exists";
+    public static final String TEMPLATE_PICKER = "citizens.commands.template.qualified-template-required";
+    public static final String TEMPLATE_SCAFFOLD_CREATED = "citizens.commands.template.scaffold.created";
     public static final String TEXT_EDITOR_ADD_PROMPT = "citizens.editors.text.add-prompt";
     public static final String TEXT_EDITOR_ADDED_ENTRY = "citizens.editors.text.added-entry";
     public static final String TEXT_EDITOR_BEGIN = "citizens.editors.text.begin";

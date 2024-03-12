@@ -99,7 +99,7 @@ public class CommandTrait extends Trait {
         NPCShopAction action = null;
         if (player.hasPermission("citizens.npc.command.ignoreerrors.*"))
             return Transaction.success();
-        if (cost > 0 && !player.hasPermission("citizens.npc.command.ignoreerrors.cost")) {
+        if (nonZeroOrNegativeOne(cost) && !player.hasPermission("citizens.npc.command.ignoreerrors.cost")) {
             action = new MoneyAction(cost);
             if (!action.take(player, 1).isPossible()) {
                 sendErrorMessage(player, CommandTraitError.MISSING_MONEY, null, cost);
@@ -119,7 +119,7 @@ public class CommandTrait extends Trait {
                         stack.getAmount());
             }
         }
-        if (command.cost != -1 && !player.hasPermission("citizens.npc.command.ignoreerrors.cost")) {
+        if (nonZeroOrNegativeOne(command.cost) && !player.hasPermission("citizens.npc.command.ignoreerrors.cost")) {
             action = new MoneyAction(command.cost);
             if (!action.take(player, 1).isPossible()) {
                 sendErrorMessage(player, CommandTraitError.MISSING_MONEY, null, command.cost);
@@ -147,21 +147,10 @@ public class CommandTrait extends Trait {
         commands.clear();
     }
 
-    public void clearHistory(CommandTraitError which, String raw) {
-        if (which == CommandTraitError.ON_GLOBAL_COOLDOWN && raw != null) {
-            globalCooldowns.remove(BaseEncoding.base64().encode(raw.getBytes()));
-            return;
-        }
-        Player who = null;
-        if (raw != null) {
-            who = Bukkit.getPlayerExact(raw);
-            if (who == null) {
-                who = Bukkit.getPlayer(UUID.fromString(raw));
-            }
-        }
+    public void clearHistory(CommandTraitError which, UUID who) {
         Collection<PlayerNPCCommand> toClear = Lists.newArrayList();
         if (who != null) {
-            toClear.add(playerTracking.get(who.getUniqueId()));
+            toClear.add(playerTracking.get(who));
         } else {
             toClear.addAll(playerTracking.values());
         }
@@ -183,6 +172,14 @@ public class CommandTrait extends Trait {
                 break;
             default:
                 return;
+        }
+    }
+
+    public void clearPlayerHistory(UUID who) {
+        if (who == null) {
+            playerTracking.clear();
+        } else {
+            playerTracking.remove(who);
         }
     }
 
@@ -236,8 +233,8 @@ public class CommandTrait extends Trait {
         String output = Messaging.tr(Messages.COMMAND_DESCRIBE_TEMPLATE, command.command,
                 StringHelper.wrap(command.cooldown != 0 ? command.cooldown
                         : Setting.NPC_COMMAND_GLOBAL_COMMAND_COOLDOWN.asSeconds()),
-                StringHelper.wrap(hasCost(command.id) ? command.cost : "default"),
-                StringHelper.wrap(hasExperienceCost(command.id) ? command.experienceCost : "default"), command.id);
+                StringHelper.wrap(command.cost > 0 ? command.cost : "default"),
+                StringHelper.wrap(command.experienceCost > 0 ? command.experienceCost : "default"), command.id);
         if (command.globalCooldown > 0) {
             output += "[global " + StringHelper.wrap(command.globalCooldown) + "s]";
         }
@@ -362,32 +359,16 @@ public class CommandTrait extends Trait {
         }
     }
 
-    public String fillPlaceholder(CommandSender sender, String input) {
-        return null;
-    }
-
     public double getCost() {
         return cost;
-    }
-
-    public double getCost(int id) {
-        return commands.get(id).cost;
     }
 
     public ExecutionMode getExecutionMode() {
         return executionMode;
     }
 
-    public float getExperienceCost() {
+    public int getExperienceCost() {
         return experienceCost;
-    }
-
-    public int getExperienceCost(int id) {
-        return commands.get(id).experienceCost;
-    }
-
-    public List<ItemStack> getItemCost(int id) {
-        return commands.get(id).itemCost;
     }
 
     private int getNewId() {
@@ -402,20 +383,12 @@ public class CommandTrait extends Trait {
         return commands.containsKey(id);
     }
 
-    public boolean hasCost(int id) {
-        return commands.get(id).cost != -1;
-    }
-
-    public boolean hasExperienceCost(int id) {
-        return commands.get(id).experienceCost != -1;
-    }
-
-    public boolean hasItemCost(int id) {
-        return !commands.get(id).itemCost.isEmpty();
-    }
-
     public boolean isHideErrorMessages() {
         return hideErrorMessages;
+    }
+
+    private boolean nonZeroOrNegativeOne(double value) {
+        return Math.abs(value) > 0.0001 && Math.abs(-1 - value) > 0.0001;
     }
 
     public boolean persistSequence() {
@@ -462,10 +435,6 @@ public class CommandTrait extends Trait {
         this.cost = cost;
     }
 
-    public void setCost(double cost, int id) {
-        commands.get(id).cost = cost;
-    }
-
     public void setCustomErrorMessage(CommandTraitError which, String message) {
         customErrorMessages.put(which, message);
     }
@@ -478,17 +447,8 @@ public class CommandTrait extends Trait {
         this.experienceCost = experienceCost;
     }
 
-    public void setExperienceCost(int experienceCost, int id) {
-        commands.get(id).experienceCost = experienceCost;
-    }
-
     public void setHideErrorMessages(boolean hide) {
         hideErrorMessages = hide;
-    }
-
-    public void setItemCost(List<ItemStack> itemCost, int id) {
-        commands.get(id).itemCost.clear();
-        commands.get(id).itemCost.addAll(itemCost);
     }
 
     public void setPersistSequence(boolean persistSequence) {
@@ -586,7 +546,8 @@ public class CommandTrait extends Trait {
                 trait.itemRequirements.clear();
                 trait.itemRequirements.addAll(requirements);
             } else {
-                trait.setItemCost(requirements, id);
+                trait.commands.get(id).itemCost.clear();
+                trait.commands.get(id).itemCost.addAll(requirements);
             }
         }
     }
@@ -594,9 +555,9 @@ public class CommandTrait extends Trait {
     private static class NPCCommand {
         String command;
         int cooldown;
-        double cost;
+        double cost = -1;
         int delay;
-        int experienceCost;
+        int experienceCost = -1;
         int globalCooldown;
         Hand hand;
         int id;

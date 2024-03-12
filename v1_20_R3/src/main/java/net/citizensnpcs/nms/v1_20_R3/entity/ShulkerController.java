@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_20_R3.CraftServer;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftShulker;
-import org.bukkit.util.Vector;
 
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_20_R3.util.ForwardingNPCHolder;
@@ -169,14 +168,6 @@ public class ShulkerController extends MobEntityController {
         }
 
         @Override
-        public void push(double x, double y, double z) {
-            Vector vector = Util.callPushEvent(npc, x, y, z);
-            if (vector != null) {
-                super.push(vector.getX(), vector.getY(), vector.getZ());
-            }
-        }
-
-        @Override
         public void push(Entity entity) {
             // this method is called by both the entities involved - cancelling
             // it will not stop the NPC from moving.
@@ -201,6 +192,11 @@ public class ShulkerController extends MobEntityController {
         }
 
         @Override
+        protected boolean teleportSomewhere() {
+            return npc == null || npc.useMinecraftAI() ? super.teleportSomewhere() : false;
+        }
+
+        @Override
         public Entity teleportTo(ServerLevel worldserver, Vec3 location) {
             if (npc == null)
                 return super.teleportTo(worldserver, location);
@@ -209,14 +205,10 @@ public class ShulkerController extends MobEntityController {
 
         @Override
         public void tick() {
+            super.tick();
             if (npc != null) {
                 NMSImpl.updateMinecraftAIState(npc, this);
-                if (npc.useMinecraftAI()) {
-                    super.tick();
-                }
                 npc.update();
-            } else {
-                super.tick();
             }
         }
 

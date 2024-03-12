@@ -12,7 +12,6 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.util.Vector;
 
 import com.mojang.authlib.GameProfile;
 
@@ -148,8 +147,13 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
             this.onGround = false;
         }
         pushEntities();
-
+        if (npc.useMinecraftAI()) {
+            foodData.tick(this);
+        }
         if (npc.data().get(NPC.Metadata.PICKUP_ITEMS, false)) {
+            if (this.takeXpDelay > 0) {
+                --this.takeXpDelay;
+            }
             AABB axisalignedbb;
             if (this.isPassenger() && !this.getVehicle().isRemoved()) {
                 axisalignedbb = this.getBoundingBox().minmax(this.getVehicle().getBoundingBox()).inflate(1.0, 0.0, 1.0);
@@ -160,6 +164,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
                 entity.playerTouch(this);
             }
         }
+        updatePlayerPose();
     }
 
     @Override
@@ -307,14 +312,6 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
             return super.onClimbable();
         else
             return false;
-    }
-
-    @Override
-    public void push(double x, double y, double z) {
-        Vector vector = Util.callPushEvent(npc, x, y, z);
-        if (vector != null) {
-            super.push(vector.getX(), vector.getY(), vector.getZ());
-        }
     }
 
     @Override
