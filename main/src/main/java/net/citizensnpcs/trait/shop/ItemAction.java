@@ -26,6 +26,7 @@ import net.citizensnpcs.api.jnbt.CompoundTag;
 import net.citizensnpcs.api.jnbt.Tag;
 import net.citizensnpcs.api.persistence.Persist;
 import net.citizensnpcs.api.util.SpigotUtil;
+import net.citizensnpcs.util.InventoryMultiplexer;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
 
@@ -50,43 +51,6 @@ public class ItemAction extends NPCShopAction {
         this.items = items;
     }
 
-    private boolean containsItems(ItemStack[] contents, int repeats, boolean modify) {
-        List<Integer> req = items.stream().map(i -> i.getAmount() * repeats).collect(Collectors.toList());
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack toMatch = contents[i];
-            if (toMatch == null || toMatch.getType() == Material.AIR || tooDamaged(toMatch))
-                continue;
-
-            toMatch = toMatch.clone();
-            for (int j = 0; j < items.size(); j++) {
-                if (toMatch == null)
-                    break;
-
-                ItemStack item = items.get(j);
-                if (req.get(j) <= 0 || !matches(item, toMatch))
-                    continue;
-
-                int remaining = req.get(j);
-                int taken = toMatch.getAmount() > remaining ? remaining : toMatch.getAmount();
-
-                if (toMatch.getAmount() == taken) {
-                    toMatch = null;
-                } else {
-                    toMatch.setAmount(toMatch.getAmount() - taken);
-                }
-                if (modify) {
-                    if (toMatch == null) {
-                        contents[i] = null;
-                    } else {
-                        contents[i] = toMatch.clone();
-                    }
-                }
-                req.set(j, remaining - taken);
-            }
-        }
-        return req.stream().collect(Collectors.summingInt(n -> n)) <= 0;
-    }
-
     @Override
     public String describe() {
         if (items.size() == 1)
@@ -104,10 +68,11 @@ public class ItemAction extends NPCShopAction {
     }
 
     @Override
-    public int getMaxRepeats(Entity entity, ItemStack[] inventory) {
+    public int getMaxRepeats(Entity entity, InventoryMultiplexer im) {
         if (!(entity instanceof InventoryHolder))
             return 0;
 
+        ItemStack[] inventory = im.getInventory();
         List<Integer> req = items.stream().map(ItemStack::getAmount).collect(Collectors.toList());
         List<Integer> has = items.stream().map(i -> 0).collect(Collectors.toList());
         for (int i = 0; i < inventory.length; i++) {
@@ -133,11 +98,42 @@ public class ItemAction extends NPCShopAction {
                 .orElse(0);
     }
 
+    private void giveItems(ItemStack[] inventory, int repeats) {
+        for (int i = 0; i < repeats; i++) {
+            List<ItemStack> toAdd = items.stream().map(ItemStack::clone).collect(Collectors.toList());
+            for (int j = 0; j < inventory.length; j++) {
+                if (toAdd.isEmpty())
+                    return;
+                if (inventory[j] == null)
+                    continue;
+                ItemStack last = toAdd.get(toAdd.size() - 1);
+                if (!inventory[j].isSimilar(last) || inventory[j].getAmount() >= inventory[j].getMaxStackSize())
+                    continue;
+                int diff = inventory[j].getMaxStackSize() - inventory[j].getAmount();
+                if (diff >= last.getAmount()) {
+                    inventory[j].setAmount(inventory[j].getAmount() + last.getAmount());
+                    toAdd.remove(toAdd.size() - 1);
+                } else {
+                    inventory[j].setAmount(inventory[j].getAmount() + diff);
+                    last.setAmount(last.getAmount() - diff);
+                }
+            }
+            for (int j = 0; j < inventory.length; j++) {
+                if (toAdd.isEmpty())
+                    break;
+                if (inventory[j] == null || inventory[j].getType() == Material.AIR) {
+                    inventory[j] = toAdd.remove(toAdd.size() - 1);
+                }
+            }
+        }
+    }
+
     @Override
-    public Transaction grant(Entity entity, ItemStack[] inventory, int repeats) {
+    public Transaction grant(Entity entity, InventoryMultiplexer im, int repeats) {
         if (!(entity instanceof InventoryHolder))
             return Transaction.fail();
         return Transaction.create(() -> {
+            ItemStack[] inventory = im.getInventory();
             int free = 0;
             for (ItemStack stack : inventory) {
                 if (stack == null || stack.getType() == Material.AIR) {
@@ -146,30 +142,8 @@ public class ItemAction extends NPCShopAction {
                 }
             }
             return free >= items.size() * repeats;
-        }, () -> {
-            for (int i = 0; i < repeats; i++) {
-                List<ItemStack> toAdd = items.stream().map(ItemStack::clone).collect(Collectors.toList());
-                for (int j = 0; j < inventory.length; j++) {
-                    if (toAdd.isEmpty())
-                        break;
-                    if (inventory[j] == null || inventory[j].getType() == Material.AIR) {
-                        inventory[j] = toAdd.remove(toAdd.size() - 1);
-                    }
-                }
-            }
-        }, () -> {
-            for (int i = 0; i < repeats; i++) {
-                List<ItemStack> toRemove = items.stream().map(ItemStack::clone).collect(Collectors.toList());
-                for (int j = 0; j < inventory.length; j++) {
-                    if (toRemove.isEmpty())
-                        break;
-                    if (toRemove.get(toRemove.size() - 1).equals(inventory[j])) {
-                        inventory[j] = null;
-                        toRemove.remove(toRemove.size() - 1);
-                    }
-                }
-            }
-        });
+        }, () -> im.transact(inventory -> giveItems(inventory, repeats)),
+                () -> im.transact(inventory -> takeItems(inventory, repeats, true)));
     }
 
     private boolean matches(ItemStack a, ItemStack b) {
@@ -212,33 +186,50 @@ public class ItemAction extends NPCShopAction {
     }
 
     @Override
-    public Transaction take(Entity entity, ItemStack[] inventory, int repeats) {
+    public Transaction take(Entity entity, InventoryMultiplexer im, int repeats) {
         if (!(entity instanceof InventoryHolder))
             return Transaction.fail();
 
-        return Transaction.create(() -> containsItems(inventory, repeats, false), () -> {
-            containsItems(inventory, repeats, true);
-        }, () -> {
-            for (ItemStack item : items.stream().map(ItemStack::clone).toArray(ItemStack[]::new)) {
-                for (int i = 0; i < inventory.length; i++) {
-                    ItemStack stack = inventory[i];
-                    if (stack == null || stack.getType() == Material.AIR) {
-                        inventory[i] = item;
-                        break;
-                    }
-                    if (stack.getMaxStackSize() > stack.getAmount() && matches(stack, item)) {
-                        int free = stack.getMaxStackSize() - stack.getAmount();
-                        if (item.getAmount() > free) {
-                            item.setAmount(item.getAmount() - free);
-                            stack.setAmount(stack.getMaxStackSize());
-                        } else {
-                            stack.setAmount(stack.getAmount() + item.getAmount());
-                            break;
-                        }
+        return Transaction.create(() -> takeItems(im.getInventory(), repeats, false),
+                () -> im.transact(inventory -> takeItems(inventory, repeats, true)),
+                () -> im.transact(inventory -> giveItems(inventory, repeats)));
+    }
+
+    private boolean takeItems(ItemStack[] contents, int repeats, boolean modify) {
+        List<Integer> req = items.stream().map(i -> i.getAmount() * repeats).collect(Collectors.toList());
+        for (int i = 0; i < contents.length; i++) {
+            ItemStack toMatch = contents[i];
+            if (toMatch == null || toMatch.getType() == Material.AIR || tooDamaged(toMatch))
+                continue;
+
+            toMatch = toMatch.clone();
+            for (int j = 0; j < items.size(); j++) {
+                if (toMatch == null)
+                    break;
+
+                ItemStack item = items.get(j);
+                if (req.get(j) <= 0 || !matches(item, toMatch))
+                    continue;
+
+                int remaining = req.get(j);
+                int taken = toMatch.getAmount() > remaining ? remaining : toMatch.getAmount();
+
+                if (toMatch.getAmount() == taken) {
+                    toMatch = null;
+                } else {
+                    toMatch.setAmount(toMatch.getAmount() - taken);
+                }
+                if (modify) {
+                    if (toMatch == null) {
+                        contents[i] = null;
+                    } else {
+                        contents[i] = toMatch.clone();
                     }
                 }
+                req.set(j, remaining - taken);
             }
-        });
+        }
+        return req.stream().collect(Collectors.summingInt(n -> n)) <= 0;
     }
 
     private boolean tooDamaged(ItemStack toMatch) {

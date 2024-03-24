@@ -528,15 +528,7 @@ public class NMS {
     }
 
     private static Collection<Player> getNearbyPlayers(Entity from, Location location, double radius) {
-        List<Player> players = Lists.newArrayList();
-        for (Player player : CitizensAPI.getLocationLookup().getNearbyPlayers(location, radius)) {
-            if (location.getWorld() != player.getWorld() || from != null && Util.canSee(player, from)
-                    || location.distance(player.getLocation()) > radius)
-                continue;
-
-            players.add(player);
-        }
-        return players;
+        return Lists.newArrayList(CitizensAPI.getLocationLookup().getNearbyVisiblePlayers(from, location, radius));
     }
 
     public static NPC getNPC(Entity entity) {
@@ -771,7 +763,6 @@ public class NMS {
 
     public static void sendPositionUpdateNearby(Entity from, boolean position, Float bodyYaw, Float pitch,
             Float headYaw) {
-        System.out.println(getNearbyPlayers(from));
         sendPositionUpdate(from, getNearbyPlayers(from), position, bodyYaw, pitch, headYaw);
     }
 
