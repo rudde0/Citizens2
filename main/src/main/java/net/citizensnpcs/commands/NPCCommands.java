@@ -24,6 +24,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Rotation;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -40,6 +41,7 @@ import org.bukkit.entity.Ocelot;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Villager.Profession;
+import org.bukkit.entity.Wolf;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.InventoryHolder;
@@ -128,6 +130,7 @@ import net.citizensnpcs.trait.Gravity;
 import net.citizensnpcs.trait.HologramTrait;
 import net.citizensnpcs.trait.HomeTrait;
 import net.citizensnpcs.trait.HorseModifiers;
+import net.citizensnpcs.trait.ItemFrameTrait;
 import net.citizensnpcs.trait.LookClose;
 import net.citizensnpcs.trait.MirrorTrait;
 import net.citizensnpcs.trait.MountTrait;
@@ -735,7 +738,7 @@ public class NPCCommands {
                 throw new CommandException(Messaging.tr(Messages.NPC_CREATE_MISSING_MOBTYPE, args.getFlag("type")));
         }
         int nameLength = SpigotUtil.getMaxNameLength(type);
-        if (Placeholders.replace(Messaging.parseComponents(name), sender, npc).length() > nameLength) {
+        if (Placeholders.replace(Messaging.stripColor(name), sender, npc).length() > nameLength) {
             Messaging.sendErrorTr(sender, Messages.NPC_NAME_TOO_LONG, nameLength);
             name = name.substring(0, nameLength);
         }
@@ -958,8 +961,11 @@ public class NPCCommands {
             max = 1,
             flags = "b",
             permission = "citizens.npc.endercrystal")
-    @Requirements(ownership = true, selected = true, types = EntityType.ENDER_CRYSTAL)
-    public void endercrystal(CommandContext args, Player sender, NPC npc) throws CommandException {
+    @Requirements(ownership = true, selected = true)
+    public void endercrystal(CommandContext args, CommandSender sender, NPC npc) throws CommandException {
+        if (!npc.getOrAddTrait(MobType.class).getType().name().equals("END_CRYSTAL")
+                && !npc.getOrAddTrait(MobType.class).getType().name().equals("ENDER_CRYSTAL"))
+            throw new CommandException();
         if (args.hasFlag('b')) {
             EnderCrystalTrait trait = npc.getOrAddTrait(EnderCrystalTrait.class);
             boolean showing = !trait.isShowBase();
@@ -981,7 +987,7 @@ public class NPCCommands {
             min = 1,
             max = 2,
             permission = "citizens.npc.enderman")
-    public void enderman(CommandContext args, Player sender, NPC npc) throws CommandException {
+    public void enderman(CommandContext args, CommandSender sender, NPC npc) throws CommandException {
         if (args.hasFlag('a')) {
             boolean angry = npc.getOrAddTrait(EndermanTrait.class).toggleAngry();
             Messaging.sendTr(sender, angry ? Messages.ENDERMAN_ANGRY_SET : Messages.ENDERMAN_ANGRY_UNSET,
@@ -1042,7 +1048,7 @@ public class NPCCommands {
                 if (!(sender instanceof ConsoleCommandSender)
                         && !followingNPC.getOrAddTrait(Owner.class).isOwnedBy(sender))
                     throw new CommandException(CommandMessages.MUST_BE_OWNER);
-                boolean following = !trait.isEnabled();
+                boolean following = explicit == null ? !trait.isEnabled() : explicit;
                 trait.follow(following ? followingNPC.getEntity() : null);
                 Messaging.sendTr(sender, following ? Messages.FOLLOW_SET : Messages.FOLLOW_UNSET, npc.getName(),
                         followingNPC.getName());
@@ -1394,8 +1400,9 @@ public class NPCCommands {
     public void item(CommandContext args, CommandSender sender, NPC npc, @Arg(1) Material mat, @Arg(2) String modify)
             throws CommandException {
         EntityType type = npc.getOrAddTrait(MobType.class).getType();
-        if (!type.name().contains("ITEM_FRAME") && !type.name().contains("ITEM_DISPLAY")
-                && !type.name().contains("BLOCK_DISPLAY") && type != EntityType.DROPPED_ITEM
+        if (!type.name().equals("OMINOUS_ITEM_SPAWNER") && !type.name().contains("ITEM_FRAME")
+                && !type.name().contains("ITEM_DISPLAY") && !type.name().contains("BLOCK_DISPLAY")
+                && !type.name().equals("DROPPED_ITEM") && !type.name().equals("ITEM")
                 && type != EntityType.FALLING_BLOCK)
             throw new CommandException(CommandMessages.REQUIREMENTS_INVALID_MOB_TYPE, Util.prettyEnum(type));
         ItemStack stack = args.hasFlag('h') ? ((Player) sender).getItemInHand() : new ItemStack(mat, 1);
@@ -1412,6 +1419,42 @@ public class NPCCommands {
             npc.spawn(npc.getStoredLocation(), SpawnReason.RESPAWN);
         }
         Messaging.sendTr(sender, Messages.ITEM_SET, npc.getName(), Util.prettyEnum(stack.getType()));
+    }
+
+    @Command(
+            aliases = { "npc" },
+            usage = "itemframe --visible [true|false] --fixed [true|false] --rotation [rotation] --item [item]",
+            desc = "",
+            modifiers = { "itemframe" },
+            min = 1,
+            max = 1,
+            flags = "",
+            permission = "citizens.npc.itemframe")
+    @Requirements(ownership = true, selected = true, types = EntityType.ITEM_FRAME)
+    public void itemframe(CommandContext args, CommandSender sender, NPC npc, @Flag("visible") Boolean visible,
+            @Flag("fixed") Boolean fixed, @Flag("rotation") Rotation rotation, @Flag("item") ItemStack item)
+            throws CommandException {
+        ItemFrameTrait ift = npc.getOrAddTrait(ItemFrameTrait.class);
+        String msg = "";
+        if (visible != null) {
+            ift.setVisible(visible);
+            msg += " " + Messaging.tr(Messages.ITEMFRAME_VISIBLE_SET, visible);
+        }
+        if (fixed != null) {
+            ift.setFixed(fixed);
+            msg += " " + Messaging.tr(Messages.ITEMFRAME_FIXED_SET, fixed);
+        }
+        if (item != null) {
+            ift.setItem(item);
+            msg += " " + Messaging.tr(Messages.ITEMFRAME_ITEM_SET, item);
+        }
+        if (rotation != null) {
+            ift.setRotation(rotation);
+            msg += " " + Messaging.tr(Messages.ITEMFRAME_ROTATION_SET, rotation);
+        }
+        if (msg.isEmpty())
+            throw new CommandUsageException();
+        Messaging.send(sender, msg.trim());
     }
 
     @Command(
@@ -1707,14 +1750,11 @@ public class NPCCommands {
             max = 1,
             flags = "",
             permission = "citizens.npc.minecart")
-    @Requirements(
-            selected = true,
-            ownership = true,
-            types = { EntityType.MINECART, EntityType.MINECART_CHEST, EntityType.MINECART_COMMAND,
-                    EntityType.MINECART_FURNACE, EntityType.MINECART_HOPPER, EntityType.MINECART_MOB_SPAWNER,
-                    EntityType.MINECART_TNT })
+    @Requirements(selected = true, ownership = true)
     public void minecart(CommandContext args, CommandSender sender, NPC npc, @Flag("item") String item)
             throws CommandException {
+        if (!npc.getOrAddTrait(MobType.class).getType().name().contains("MINECRAFT"))
+            throw new CommandUsageException();
         if (item != null) {
             int data = 0;
             if (item.contains(":")) {
@@ -2534,7 +2574,7 @@ public class NPCCommands {
         String oldName = npc.getName();
         String newName = args.getJoinedStrings(1);
         int nameLength = SpigotUtil.getMaxNameLength(npc.getOrAddTrait(MobType.class).getType());
-        if (Placeholders.replace(Messaging.parseComponents(newName), sender, npc).length() > nameLength) {
+        if (Placeholders.replace(Messaging.stripColor(newName), sender, npc).length() > nameLength) {
             Messaging.sendErrorTr(sender, Messages.NPC_NAME_TOO_LONG, nameLength);
             newName = newName.substring(0, nameLength);
         }
@@ -3149,17 +3189,20 @@ public class NPCCommands {
             min = 1,
             max = 2,
             permission = "citizens.npc.target")
-    public void target(CommandContext args, Player sender, NPC npc) {
+    public void target(CommandContext args, CommandSender sender, NPC npc) throws CommandUsageException {
         if (args.hasFlag('c')) {
             npc.getNavigator().cancelNavigation();
             return;
         }
-        Entity toTarget = args.argsLength() < 2 ? sender : Bukkit.getPlayer(args.getString(1));
-        if (toTarget == null) {
+        Entity toTarget = args.argsLength() < 2 && sender instanceof Player ? (Player) sender
+                : Bukkit.getPlayer(args.getString(1));
+        if (toTarget == null && args.argsLength() == 2) {
             toTarget = Bukkit.getEntity(UUID.fromString(args.getString(1)));
         }
         if (toTarget != null) {
             npc.getNavigator().setTarget(toTarget, args.hasFlag('a'));
+        } else {
+            throw new CommandUsageException();
         }
     }
 
@@ -3422,7 +3465,7 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
-            usage = "wither (--invulnerable [true|false]) (--arrow-shield [true|false])",
+            usage = "wither (--invulnerable [true|false]) (--invulnerable-ticks [ticks]) (--arrow-shield [true|false])",
             desc = "",
             modifiers = { "wither" },
             min = 1,
@@ -3431,10 +3474,14 @@ public class NPCCommands {
             permission = "citizens.npc.wither")
     @Requirements(selected = true, ownership = true, types = { EntityType.WITHER })
     public void wither(CommandContext args, CommandSender sender, NPC npc, @Flag("invulnerable") Boolean invulnerable,
-            @Flag("arrow-shield") Boolean arrows) throws CommandException {
+            @Flag("arrow-shield") Boolean arrows, @Flag("invulnerable-ticks") Integer invulnerableTicks)
+            throws CommandException {
         WitherTrait trait = npc.getOrAddTrait(WitherTrait.class);
         if (invulnerable != null) {
             trait.setInvulnerable(invulnerable);
+        }
+        if (invulnerableTicks != null) {
+            trait.setInvulnerableTicks(invulnerableTicks);
         }
         if (arrows != null) {
             trait.setBlocksArrows(arrows);
@@ -3443,7 +3490,7 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
-            usage = "wolf (-s(itting) a(ngry) t(amed) i(nfo)) --collar [hex rgb color|name]",
+            usage = "wolf (-s(itting) a(ngry) t(amed) i(nfo)) --collar [hex rgb color|name] --variant [variant]",
             desc = "",
             modifiers = { "wolf" },
             min = 1,
@@ -3452,7 +3499,11 @@ public class NPCCommands {
             flags = "sati",
             permission = "citizens.npc.wolf")
     @Requirements(selected = true, ownership = true, types = EntityType.WOLF)
-    public void wolf(CommandContext args, CommandSender sender, NPC npc, @Flag("collar") String collar)
+    public void wolf(CommandContext args, CommandSender sender, NPC npc, @Flag("collar") String collar,
+            @Flag(
+                    value = "variant",
+                    completions = { "ASHEN", "BLACK", "CHESTNUT", "PALE", "RUSTY", "SNOWY", "STRIPED", "WOODS",
+                            "SPOTTED" }) String variant)
             throws CommandException {
         WolfModifiers trait = npc.getOrAddTrait(WolfModifiers.class);
         if (args.hasFlag('a')) {
@@ -3463,6 +3514,15 @@ public class NPCCommands {
         }
         if (args.hasFlag('t')) {
             trait.setTamed(!trait.isTamed());
+        }
+        if (variant != null) {
+            variant = variant.toUpperCase();
+            try {
+                Wolf.Variant.class.getField(variant);
+            } catch (Throwable t) {
+                throw new CommandUsageException();
+            }
+            trait.setVariant(variant);
         }
         if (collar != null) {
             String unparsed = collar;

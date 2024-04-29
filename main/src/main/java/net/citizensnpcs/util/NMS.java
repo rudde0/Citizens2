@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -49,7 +50,6 @@ import net.citizensnpcs.api.astar.pathfinder.SwimmingExaminer;
 import net.citizensnpcs.api.command.CommandManager;
 import net.citizensnpcs.api.command.exception.CommandException;
 import net.citizensnpcs.api.event.NPCKnockbackEvent;
-import net.citizensnpcs.api.jnbt.CompoundTag;
 import net.citizensnpcs.api.npc.BlockBreaker;
 import net.citizensnpcs.api.npc.BlockBreaker.BlockBreakerConfiguration;
 import net.citizensnpcs.api.npc.NPC;
@@ -61,6 +61,7 @@ import net.citizensnpcs.npc.ai.MCTargetStrategy.TargetNavigator;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.trait.MirrorTrait;
 import net.citizensnpcs.trait.PacketNPC;
+import net.citizensnpcs.trait.versioned.ArmadilloTrait.ArmadilloState;
 import net.citizensnpcs.trait.versioned.CamelTrait.CamelPose;
 import net.citizensnpcs.trait.versioned.SnifferTrait.SnifferState;
 import net.citizensnpcs.util.EntityPacketTracker.PacketAggregator;
@@ -213,6 +214,10 @@ public class NMS {
             return BoundingBox.EMPTY;
 
         return BRIDGE.getCollisionBox(block).add(block.getX(), block.getY(), block.getZ());
+    }
+
+    public static Map<String, Object> getComponentMap(ItemStack item) {
+        return BRIDGE.getComponentMap(item);
     }
 
     public static Location getDestination(Entity entity) {
@@ -519,10 +524,6 @@ public class NMS {
         return null;
     }
 
-    public static CompoundTag getNBT(ItemStack item) {
-        return BRIDGE.getNBT(item);
-    }
-
     private static Collection<Player> getNearbyPlayers(Entity from) {
         return getNearbyPlayers(from, from.getLocation(), 64);
     }
@@ -790,6 +791,10 @@ public class NMS {
         BRIDGE.setAllayDancing(entity, dancing);
     }
 
+    public static void setArmadilloState(Entity entity, ArmadilloState state) {
+        BRIDGE.setArmadilloState(entity, state);
+    }
+
     public static void setBodyYaw(Entity entity, float yaw) {
         BRIDGE.setBodyYaw(entity, yaw);
     }
@@ -906,6 +911,10 @@ public class NMS {
         BRIDGE.setTeamNameTagVisible(team, visible);
     }
 
+    public static void setTextDisplayComponent(Entity entity, Object component) {
+        BRIDGE.setTextDisplayComponent(entity, component);
+    }
+
     public static void setVerticalMovement(Entity bukkitEntity, double d) {
         BRIDGE.setVerticalMovement(bukkitEntity, d);
     }
@@ -914,8 +923,8 @@ public class NMS {
         BRIDGE.setWardenPose(entity, pose);
     }
 
-    public static void setWitherInvulnerable(Wither wither, boolean charged) {
-        BRIDGE.setWitherCharged(wither, charged);
+    public static void setWitherInvulnerableTicks(Wither wither, int ticks) {
+        BRIDGE.setWitherInvulnerableTicks(wither, ticks);
     }
 
     public static boolean shouldJump(org.bukkit.entity.Entity entity) {

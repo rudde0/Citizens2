@@ -2,6 +2,7 @@ package net.citizensnpcs.util;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -32,7 +33,6 @@ import com.mojang.authlib.GameProfileRepository;
 import net.citizensnpcs.api.ai.NavigatorParameters;
 import net.citizensnpcs.api.command.CommandManager;
 import net.citizensnpcs.api.command.exception.CommandException;
-import net.citizensnpcs.api.jnbt.CompoundTag;
 import net.citizensnpcs.api.npc.BlockBreaker;
 import net.citizensnpcs.api.npc.BlockBreaker.BlockBreakerConfiguration;
 import net.citizensnpcs.api.npc.NPC;
@@ -40,7 +40,10 @@ import net.citizensnpcs.api.util.BoundingBox;
 import net.citizensnpcs.api.util.EntityDim;
 import net.citizensnpcs.npc.ai.MCNavigationStrategy.MCNavigator;
 import net.citizensnpcs.npc.ai.MCTargetStrategy.TargetNavigator;
+import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.trait.MirrorTrait;
+import net.citizensnpcs.trait.SneakTrait;
+import net.citizensnpcs.trait.versioned.ArmadilloTrait.ArmadilloState;
 import net.citizensnpcs.trait.versioned.CamelTrait.CamelPose;
 import net.citizensnpcs.trait.versioned.SnifferTrait.SnifferState;
 import net.citizensnpcs.util.EntityPacketTracker.PacketAggregator;
@@ -80,6 +83,10 @@ public interface NMSBridge {
 
     public BoundingBox getCollisionBox(Block block);
 
+    public default Map<String, Object> getComponentMap(ItemStack item) {
+        return item.getItemMeta().serialize();
+    }
+
     public Location getDestination(Entity entity);
 
     public GameProfileRepository getGameProfileRepository();
@@ -87,8 +94,6 @@ public interface NMSBridge {
     public float getHeadYaw(Entity entity);
 
     public float getHorizontalMovement(Entity entity);
-
-    public CompoundTag getNBT(ItemStack item);
 
     public NPC getNPC(Entity entity);
 
@@ -99,6 +104,10 @@ public interface NMSBridge {
     public GameProfile getProfile(Player player);
 
     public GameProfile getProfile(SkullMeta meta);
+
+    public default float getRidingHeightOffset(Entity entity, Entity mount) {
+        return 0;
+    }
 
     public String getSoundPath(Sound flag) throws CommandException;
 
@@ -191,6 +200,9 @@ public interface NMSBridge {
         throw new UnsupportedOperationException();
     }
 
+    public default void setArmadilloState(Entity entity, ArmadilloState state) {
+    }
+
     public void setBodyYaw(Entity entity, float yaw);
 
     public void setBoundingBox(Entity entity, BoundingBox box);
@@ -252,7 +264,9 @@ public interface NMSBridge {
     public void setSitting(Tameable tameable, boolean sitting);
 
     public default void setSneaking(Entity entity, boolean sneaking) {
-        if (entity instanceof Player) {
+        if (entity instanceof NPCHolder) {
+            ((NPCHolder) entity).getNPC().getOrAddTrait(SneakTrait.class).setSneaking(sneaking);
+        } else if (entity instanceof Player) {
             ((Player) entity).setSneaking(sneaking);
         }
     }
@@ -266,12 +280,17 @@ public interface NMSBridge {
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, visible ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
     }
 
+    public default void setTextDisplayComponent(Entity entity, Object component) {
+    }
+
     public void setVerticalMovement(Entity bukkitEntity, double d);
 
     public default void setWardenPose(Entity entity, Object pose) {
     }
 
-    public void setWitherCharged(Wither wither, boolean charged);
+    public default void setWitherInvulnerableTicks(Wither wither, int ticks) {
+        wither.setInvulnerabilityTicks(ticks);
+    }
 
     public boolean shouldJump(Entity entity);
 

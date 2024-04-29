@@ -19,6 +19,7 @@ public class Messages {
     public static final String ANCHOR_REMOVED = "citizens.commands.npc.anchor.removed";
     public static final String ANIMATION_ADDED = "citizens.editors.waypoints.triggers.animation.added";
     public static final String ANIMATION_TRIGGER_PROMPT = "citizens.editors.waypoints.triggers.animation.prompt";
+    public static final String ARMADILLO_STATE_SET = "citizens.commands.npc.armadillo.state-set";
     public static final String AVAILABLE_WAYPOINT_PROVIDERS = "citizens.waypoints.available-providers-header";
     public static final String AXOLOTL_NOT_PLAYING_DEAD = "citizens.commands.npc.axolotl.playing-dead-stopped";
     public static final String AXOLOTL_PLAYING_DEAD = "citizens.commands.npc.axolotl.playing-dead";
@@ -124,6 +125,12 @@ public class Messages {
     public static final String FOLLOW_UNSET = "citizens.commands.npc.follow.unset";
     public static final String FOX_CROUCHING_SET = "citizens.commands.npc.fox.crouching-set";
     public static final String FOX_CROUCHING_UNSET = "citizens.commands.npc.fox.crouching-unset";
+    public static final String FOX_FACEPLANTED_SET = "citizens.commands.npc.fox.faceplanted-set";
+    public static final String FOX_FACEPLANTED_UNSET = "citizens.commands.npc.fox.faceplanted-unset";
+    public static final String FOX_INTERESTED_SET = "citizens.commands.npc.fox.interested-set";
+    public static final String FOX_INTERESTED_UNSET = "citizens.commands.npc.fox.interested-unset";
+    public static final String FOX_POUNCING_SET = "citizens.commands.npc.fox.pouncing-set";
+    public static final String FOX_POUNCING_UNSET = "citizens.commands.npc.fox.pouncing-unset";
     public static final String FOX_SITTING_SET = "citizens.commands.npc.fox.sitting-set";
     public static final String FOX_SITTING_UNSET = "citizens.commands.npc.fox.sitting-unset";
     public static final String FOX_SLEEPING_SET = "citizens.commands.npc.fox.sleeping-set";
@@ -204,6 +211,10 @@ public class Messages {
     public static final String INVALID_TROPICALFISH_PATTERN = "citizens.commands.npc.tropicalfish.invalid-pattern";
     public static final String INVALID_VILLAGER_TYPE = "citizens.commands.npc.villager.invalid-type";
     public static final String ITEM_SET = "citizens.commands.npc.item.item-set";
+    public static final String ITEMFRAME_FIXED_SET = "citizens.commands.npc.itemframe.fixed-set";
+    public static final String ITEMFRAME_ITEM_SET = "citizens.commands.npc.itemframe.item-set";
+    public static final String ITEMFRAME_ROTATION_SET = "citizens.commands.npc.itemframe.rotation-set";
+    public static final String ITEMFRAME_VISIBLE_SET = "citizens.commands.npc.itemframe.visible-set";
     public static final String KNOCKBACK_SET = "citizens.commands.npc.knockback.set";
     public static final String KNOCKBACK_UNSET = "citizens.commands.npc.knockback.unset";
     public static final String LEASHABLE_SET = "citizens.commands.npc.leashable.set";
