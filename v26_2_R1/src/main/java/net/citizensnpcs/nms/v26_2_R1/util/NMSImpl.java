@@ -1341,18 +1341,6 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
-    public void openHorseInventory(Tameable horse, Player equipper) {
-        LivingEntity handle = getHandle(horse);
-        ServerPlayer equipperHandle = (ServerPlayer) getHandle(equipper);
-        if (handle == null || equipperHandle == null)
-            return;
-        boolean wasTamed = horse.isTamed();
-        horse.setTamed(true);
-        ((AbstractHorse) handle).openCustomInventoryScreen(equipperHandle);
-        horse.setTamed(wasTamed);
-    }
-
-    @Override
     public void playAnimation(PlayerAnimation animation, Player player, Iterable<Player> to) {
         PlayerAnimationImpl.play(animation, player, to);
     }
@@ -1436,7 +1424,7 @@ public class NMSImpl implements NMSBridge {
             return;
         NPC npc = CitizensAPI.getNPCRegistry().getNPC(hooked.getBukkitEntity());
         if (npc != null && npc.isProtected()) {
-            hook.hookedIn = null;
+            hook.setHookedEntity(null);
             hook.getBukkitEntity().remove();
         }
     }
@@ -1452,8 +1440,8 @@ public class NMSImpl implements NMSBridge {
                 entry = getTrackedEntityFolia(handle);
                 if (entry == null)
                     return;
-                entry.broadcastRemoved();
                 CitizensEntityTracker newTracker = new CitizensEntityTracker(server.getChunkSource().chunkMap, entry);
+                CitizensEntityTracker.transferSeenBy(entry, newTracker);
                 try {
                     ENTITY_TRACKER_SETTER_FOLIA.invoke(handle, newTracker);
                 } catch (Throwable t) {

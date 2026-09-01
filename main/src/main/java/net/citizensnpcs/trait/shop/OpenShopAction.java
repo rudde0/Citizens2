@@ -32,8 +32,9 @@ public class OpenShopAction extends NPCShopAction {
     @Override
     public String describe() {
         NPCShop shop = ((Citizens) CitizensAPI.getPlugin()).getShops().getShop(shopName);
-        String description = "Open " + shop.getName();
-        return description;
+        if (shop == null)
+            return "Open shop (currently unset)";
+        return "Open " + shop.getName();
     }
 
     @Override
@@ -55,7 +56,7 @@ public class OpenShopAction extends NPCShopAction {
         // TODO: support hierarchical shops? would need to call InventoryMenu#transition somehow
         return Transaction.create(() -> shop.canView(player), () -> {
             player.closeInventory();
-            CitizensAPI.getScheduler().checkedRunEntityTask(player, () -> shop.display(player));
+            CitizensAPI.getScheduler().runEntityTaskLater(player, () -> shop.display(player), 1);
         }, () -> {
             // TODO: closeInventory()? transitionBack()?
         });
@@ -72,6 +73,11 @@ public class OpenShopAction extends NPCShopAction {
             OpenShopAction action = previous == null ? new OpenShopAction() : (OpenShopAction) previous;
             return InputMenus.stringSetter(() -> action.shopName, s -> {
                 if (s == null || s.isEmpty()) {
+                    callback.accept(null);
+                    return;
+                }
+                NPCShop shop = ((Citizens) CitizensAPI.getPlugin()).getShops().getShop(s);
+                if (shop == null) {
                     callback.accept(null);
                     return;
                 }

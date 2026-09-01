@@ -184,6 +184,7 @@ public class Messages {
     public static final String HOLOGRAM_RENDERER_SELECTED = "citizens.commands.npc.hologram.renderer-selected";
     public static final String HOLOGRAM_TEXT_MISSING = "citizens.commands.npc.hologram.text-missing";
     public static final String HOLOGRAM_TEXT_REMOVED = "citizens.commands.npc.hologram.text-removed";
+    public static final String HOLOGRAM_VERTICAL_VIEW_RANGE_SET = "citizens.commands.npc.hologram.vertical-view-range-set";
     public static final String HOLOGRAM_VIEW_RANGE_SET = "citizens.commands.npc.hologram.view-range-set";
     public static final String HOME_TRAIT_DELAY_SET = "citizens.commands.npc.home.delay-set";
     public static final String HOME_TRAIT_DISTANCE_SET = "citizens.commands.npc.home.distance-set";
@@ -246,6 +247,8 @@ public class Messages {
     public static final String LINEAR_WAYPOINT_EDITOR_CYCLE_SET = "citizens.editors.waypoints.linear.cycle-set";
     public static final String LINEAR_WAYPOINT_EDITOR_CYCLE_UNSET = "citizens.editors.waypoints.linear.cycle-unset";
     public static final String LINEAR_WAYPOINT_EDITOR_END = "citizens.editors.waypoints.linear.end";
+    public static final String LINEAR_WAYPOINT_EDITOR_PATHFIND_SET = "citizens.editors.waypoints.linear.pathfind-set";
+    public static final String LINEAR_WAYPOINT_EDITOR_PATHFIND_UNSET = "citizens.editors.waypoints.linear.pathfind-unset";
     public static final String LINEAR_WAYPOINT_EDITOR_RANGE_EXCEEDED = "citizens.editors.waypoints.linear.range-exceeded";
     public static final String LINEAR_WAYPOINT_EDITOR_REMOVED_WAYPOINT = "citizens.editors.waypoints.linear.removed-waypoint";
     public static final String LINEAR_WAYPOINT_EDITOR_WAYPOINTS_CLEARED = "citizens.editors.waypoints.linear.waypoints-cleared";

@@ -1335,18 +1335,6 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
-    public void openHorseInventory(Tameable horse, Player equipper) {
-        LivingEntity handle = getHandle(horse);
-        ServerPlayer equipperHandle = (ServerPlayer) getHandle(equipper);
-        if (handle == null || equipperHandle == null)
-            return;
-        boolean wasTamed = horse.isTamed();
-        horse.setTamed(true);
-        ((AbstractHorse) handle).openCustomInventoryScreen(equipperHandle);
-        horse.setTamed(wasTamed);
-    }
-
-    @Override
     public void playAnimation(PlayerAnimation animation, Player player, Iterable<Player> to) {
         PlayerAnimationImpl.play(animation, player, to);
     }
@@ -1446,8 +1434,8 @@ public class NMSImpl implements NMSBridge {
                 entry = getTrackedEntityFolia(handle);
                 if (entry == null)
                     return;
-                entry.broadcastRemoved();
                 CitizensEntityTracker newTracker = new CitizensEntityTracker(server.getChunkSource().chunkMap, entry);
+                CitizensEntityTracker.transferSeenBy(entry, newTracker);
                 try {
                     ENTITY_TRACKER_SETTER_FOLIA.invoke(handle, newTracker);
                 } catch (Throwable t) {
@@ -2429,13 +2417,11 @@ public class NMSImpl implements NMSBridge {
     public static void markClientLoaded(ServerGamePacketListenerImpl connection) {
         try {
             WAITING_FOR_RESPAWN.invoke(connection, false);
-            for (int i = 0; i <= 60; i++) {
-                connection.tickClientLoadTimeout();
-            }
+            CLIENT_LOADED_TIMEOUT_TIMER.invoke(connection, 0);
         } catch (Throwable e) {
             e.printStackTrace();
         }
-    };
+    }
 
     public static void minecartItemLogic(AbstractMinecart minecart) {
         NPC npc = ((NPCHolder) minecart).getNPC();
@@ -2813,6 +2799,7 @@ public class NMSImpl implements NMSBridge {
     }
 
     private static final MethodHandle ARMADILLO_SCUTE_TIME = NMS.getSetter(Armadillo.class, "cG");
+
     private static final MethodHandle ATTRIBUTE_PROVIDER_MAP = NMS.getFirstGetter(AttributeSupplier.class, Map.class);
     private static final MethodHandle ATTRIBUTE_PROVIDER_MAP_SETTER = NMS.getFirstFinalSetter(AttributeSupplier.class,
             Map.class);
@@ -2827,6 +2814,8 @@ public class NMSImpl implements NMSBridge {
     private static final MethodHandle BUKKITENTITY_FIELD_SETTER = NMS.getSetter(Entity.class, "bukkitEntity");
     private static final MethodHandle CHUNKMAP_UPDATE_PLAYER_STATUS = NMS.getMethodHandle(ChunkMap.class, "a", true,
             ServerPlayer.class, boolean.class);
+    private static final MethodHandle CLIENT_LOADED_TIMEOUT_TIMER = NMS.getSetter(ServerGamePacketListenerImpl.class,
+            "clientLoadedTimeoutTimer");
     public static final MethodHandle CONNECTION_DISCONNECT_LISTENER = NMS.getSetter(Connection.class, "m");
     public static final MethodHandle CONNECTION_PACKET_LISTENER = NMS.getSetter(Connection.class, "n");
     private static final MethodHandle CRAFT_BOSSBAR_HANDLE_FIELD = NMS.getFirstSetter(CraftBossBar.class,
