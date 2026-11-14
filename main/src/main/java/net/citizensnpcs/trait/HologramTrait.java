@@ -1031,6 +1031,8 @@ public class HologramTrait extends Trait {
                 dt = hologram.getOrAddTrait(DisplayTrait.class).clone();
                 tdt = hologram.getOrAddTrait(TextDisplayTrait.class).clone();
             }
+            // the next hologram entity starts from whatever text is current, not from lastRendered
+            lastRendered = null;
             super.destroy();
         }
 
