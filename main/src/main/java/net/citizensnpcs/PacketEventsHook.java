@@ -77,6 +77,7 @@ public class PacketEventsHook implements Listener {
     private MethodHandle DESERIALIZE_METHOD;
     private final Map<Integer, DisguiseTrait> disguiseTraits = Maps.newConcurrentMap();
     private final Map<UUID, DisguiseTrait> disguiseTraitsUUID = Maps.newConcurrentMap();
+    private final Map<Integer, NPC> hologramNPCs = Maps.newConcurrentMap();
     private Object MINIMESSAGE;
     private final Map<UUID, MirrorTrait> mirrorTraits = Maps.newConcurrentMap();
     private Constructor<PlayerData> PLAYERDATA_CONSTRUCTOR;
@@ -303,11 +304,13 @@ public class PacketEventsHook implements Listener {
             public void onPacketSend(PacketSendEvent event) {
                 if (event.getPacketType() != PacketType.Play.Server.ENTITY_METADATA)
                     return;
+                // Metadata packets vastly outnumber hologram NPCs; gate on a map maintained by
+                // spawn/despawn instead of doing a world entity + registry lookup per packet.
+                if (hologramNPCs.isEmpty())
+                    return;
                 WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(event);
-                Entity entity = SpigotConversionUtil.getEntityById(event.<Player> getPlayer().getWorld(),
-                        packet.getEntityId());
-                NPC npc = plugin.getNPCRegistry().getNPC(entity);
-                if (npc == null || !npc.data().has(NPC.Metadata.HOLOGRAM_RENDERER))
+                NPC npc = hologramNPCs.get(packet.getEntityId());
+                if (npc == null)
                     return;
                 int version = event.getUser().getPacketVersion().getProtocolVersion();
 
@@ -485,7 +488,8 @@ public class PacketEventsHook implements Listener {
         rotationTraits.remove(event.getNPC().getEntity().getEntityId());
         mirrorTraits.remove(event.getNPC().getEntity().getUniqueId());
         disguiseTraits.remove(event.getNPC().getEntity().getEntityId());
-        disguiseTraits.remove(event.getNPC().getEntity().getUniqueId());
+        disguiseTraitsUUID.remove(event.getNPC().getEntity().getUniqueId());
+        hologramNPCs.remove(event.getNPC().getEntity().getEntityId());
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -494,6 +498,9 @@ public class PacketEventsHook implements Listener {
     }
 
     private void onSpawn(NPCEvent event) {
+        if (event.getNPC().data().has(NPC.Metadata.HOLOGRAM_RENDERER)) {
+            hologramNPCs.put(event.getNPC().getEntity().getEntityId(), event.getNPC());
+        }
         if (event.getNPC().hasTrait(RotationTrait.class)) {
             rotationTraits.put(event.getNPC().getEntity().getEntityId(),
                     event.getNPC().getTraitNullable(RotationTrait.class));
