@@ -151,6 +151,7 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
     private CitizensNPCRegistry npcRegistry;
     private boolean packetEventsEnabled;
     private PacketEventsHook packetEventsHook;
+    private com.github.retrooper.packetevents.PacketEventsAPI<?> ownedPacketEventsAPI;
     private SchedulerTask playerUpdateTask;
     private boolean saveOnDisable = true;
     private NPCDataStore saves;
@@ -415,7 +416,7 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         Skin.clearCache();
         NMS.shutdown();
         CitizensAPI.shutdown();
-        if (packetEventsEnabled) {
+        if (packetEventsEnabled && ownedPacketEventsAPI != null && PacketEvents.getAPI() == ownedPacketEventsAPI) {
             PacketEvents.getAPI().terminate();
         }
         scoreboardManager.close();
@@ -515,8 +516,14 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
             return;
 
         try {
-            PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
-            PacketEvents.getAPI().load();
+            // Reuse the standalone PacketEvents plugin instance if one is already registered;
+            // replacing it would orphan other plugins' listeners and make terminate() on shutdown
+            // kill an API shared with them.
+            if (PacketEvents.getAPI() == null) {
+                ownedPacketEventsAPI = SpigotPacketEventsBuilder.build(this);
+                PacketEvents.setAPI(ownedPacketEventsAPI);
+                PacketEvents.getAPI().load();
+            }
             packetEventsEnabled = true;
         } catch (Throwable t) {
         }
