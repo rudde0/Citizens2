@@ -58,6 +58,7 @@ import net.citizensnpcs.api.util.SpigotUtil;
 import net.citizensnpcs.trait.versioned.AreaEffectCloudTrait;
 import net.citizensnpcs.trait.versioned.DisplayTrait;
 import net.citizensnpcs.trait.versioned.TextDisplayTrait;
+import net.citizensnpcs.util.ExternalAppearance;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
 
@@ -345,7 +346,8 @@ public class HologramTrait extends Trait {
         Location npcLoc = npc.getEntity().getLocation();
         boolean updatePosition = Setting.HOLOGRAM_ALWAYS_UPDATE_POSITION.asBoolean() || lastLoc == null
                 || lastLoc.getWorld() != npcLoc.getWorld() || lastNameplateVisible != nameplateVisible
-                || Math.abs(lastEntityBbHeight - NMS.getBoundingBoxHeight(npc.getEntity())) >= 0.05
+                // projects.gg fork: the base height follows an ExternalAppearance height when one is set
+                || Math.abs(lastEntityBbHeight - ExternalAppearance.hologramBaseHeight(npc)) >= 0.05
                 || lastLoc.distance(npcLoc) >= 0.001;
         boolean updateText = false;
         Vector3d offset = new Vector3d(0, 0, 0);
@@ -358,7 +360,7 @@ public class HologramTrait extends Trait {
 
         if (updatePosition) {
             lastLoc = npcLoc.clone();
-            lastEntityBbHeight = NMS.getBoundingBoxHeight(npc.getEntity());
+            lastEntityBbHeight = ExternalAppearance.hologramBaseHeight(npc);
         }
         if (nameLine != null) {
             if (updateText) {
@@ -496,7 +498,7 @@ public class HologramTrait extends Trait {
             }
             SpigotUtil.teleportAsync(hologram.getEntity(),
                     npc.getEntity().getLocation().clone().add(offset.x,
-                            offset.y + NMS.getBoundingBoxHeight(npc.getEntity()) - 0.5, offset.z),
+                            offset.y + ExternalAppearance.hologramBaseHeight(npc) - 0.5, offset.z),
                     TeleportCause.PLUGIN);
         }
     }
@@ -517,7 +519,7 @@ public class HologramTrait extends Trait {
         @Override
         protected void render0(NPC npc, Vector3d offset) {
             SpigotUtil.teleportAsync(hologram.getEntity(), npc.getEntity().getLocation().clone().add(offset.x,
-                    offset.y + NMS.getBoundingBoxHeight(npc.getEntity()), offset.z), TeleportCause.PLUGIN);
+                    offset.y + ExternalAppearance.hologramBaseHeight(npc), offset.z), TeleportCause.PLUGIN);
         }
     }
 
@@ -856,7 +858,7 @@ public class HologramTrait extends Trait {
         @Override
         protected void render0(NPC npc, Vector3d offset) {
             SpigotUtil.teleportAsync(hologram.getEntity(), npc.getEntity().getLocation().clone().add(offset.x,
-                    offset.y + NMS.getBoundingBoxHeight(npc.getEntity()), offset.z), TeleportCause.PLUGIN);
+                    offset.y + ExternalAppearance.hologramBaseHeight(npc), offset.z), TeleportCause.PLUGIN);
         }
 
         @Override
@@ -959,7 +961,7 @@ public class HologramTrait extends Trait {
                 hologram.data().set(NPC.Metadata.TRACKING_RANGE, npc.data().get(NPC.Metadata.TRACKING_RANGE));
             }
             hologram.spawn(npc.getEntity().getLocation().add(offset.x,
-                    offset.y + NMS.getBoundingBoxHeight(npc.getEntity()), offset.z));
+                    offset.y + ExternalAppearance.hologramBaseHeight(npc), offset.z));
         }
 
         @Override
@@ -1064,7 +1066,7 @@ public class HologramTrait extends Trait {
             }
             SpigotUtil.teleportAsync(hologram.getEntity(),
                     base.getEntity().getLocation().clone().add(offset.x,
-                            offset.y + NMS.getBoundingBoxHeight(base.getEntity()) + 0.2f, offset.z),
+                            offset.y + ExternalAppearance.hologramBaseHeight(base) + 0.2f, offset.z),
                     TeleportCause.PLUGIN);
         }
 
@@ -1123,7 +1125,7 @@ public class HologramTrait extends Trait {
             Transformation tf = disp.getTransformation();
             // the display rides at the NPC's passenger attachment point, which sits inside the model - lift it
             // to the same height the non-vehicle renderer uses. Both values scale with the scale attribute.
-            float aboveRider = (float) NMS.getBoundingBoxHeight(npc.getEntity())
+            float aboveRider = (float) ExternalAppearance.hologramBaseHeight(npc)
                     - NMS.getRidingHeightOffset(npc.getEntity(), hologram.getEntity());
             tf.getTranslation().y = (float) offset.y + 0.2f + Math.max(0, aboveRider);
             disp.setTransformation(tf);
