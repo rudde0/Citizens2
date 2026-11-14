@@ -41,9 +41,7 @@
             </activation>
             <modules>
                 <module>main</module>
-                <module>v1_21_R7</module>
                 <module>v26_1_R1</module>
-                <module>v26_2_R1</module>
                 <module>dist</module>
             </modules>
         </profile>
