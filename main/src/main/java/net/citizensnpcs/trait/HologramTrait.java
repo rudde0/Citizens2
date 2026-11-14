@@ -1066,13 +1066,25 @@ public class HologramTrait extends Trait {
                     TeleportCause.PLUGIN);
         }
 
+        /**
+         * Last placeholder-resolved text given to the display. {@link HologramTrait#run()} re-sends every line
+         * every update-rate ticks; parsing it into a component again when nothing changed was the biggest
+         * per-NPC hologram cost (many mob NPCs with static or script-driven text).
+         */
+        private String lastRendered;
+
         @Override
         public void updateText(NPC npc, String raw) {
             this.text = raw;
             if (hologram == null)
                 return;
+            String rendered = Placeholders.replace(text, null, npc);
+            if (rendered != null && rendered.equals(lastRendered)
+                    && hologram.data().has(NPC.Metadata.TEXT_DISPLAY_COMPONENT))
+                return;
+            lastRendered = rendered;
             hologram.data().set(NPC.Metadata.TEXT_DISPLAY_COMPONENT,
-                    Messaging.minecraftComponentFromRawMessage(Placeholders.replace(text, null, npc)));
+                    Messaging.minecraftComponentFromRawMessage(rendered));
         }
     }
 
