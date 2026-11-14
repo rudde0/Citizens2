@@ -128,6 +128,7 @@ import net.citizensnpcs.trait.HomeTrait;
 import net.citizensnpcs.trait.TargetableTrait;
 import net.citizensnpcs.trait.versioned.SnowmanTrait;
 import net.citizensnpcs.util.ChunkCoord;
+import net.citizensnpcs.util.ExternalAppearance;
 import net.citizensnpcs.util.Messages;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.PlayerAnimation;
@@ -568,8 +569,9 @@ public class EventListen implements Listener {
 
     private void onNPCPlayerLinkToPlayer(NPCLinkToPlayerEvent event) {
         Entity tracker = event.getNPC().getEntity();
+        // projects.gg fork: no turning swing for a body that is drawn elsewhere (see ExternalAppearance)
         boolean resetYaw = event.getNPC().data().get(NPC.Metadata.RESET_YAW_ON_SPAWN,
-                Setting.RESET_YAW_ON_SPAWN.asBoolean());
+                Setting.RESET_YAW_ON_SPAWN.asBoolean()) && !ExternalAppearance.has(event.getNPC());
         boolean sendTabRemove = NMS.sendTabListAdd(event.getPlayer(), (Player) tracker);
         if (!sendTabRemove || !event.getNPC().shouldRemoveFromTabList()) {
             NMS.sendRotationPacket(tracker, ImmutableList.of(event.getPlayer()), null, null, NMS.getHeadYaw(tracker));
