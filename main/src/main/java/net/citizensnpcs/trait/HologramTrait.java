@@ -1034,9 +1034,22 @@ public class HologramTrait extends Trait {
             super.destroy();
         }
 
+        /**
+         * {@link DisplayTrait} applies this on spawn via the cosmetic entity, which packet NPCs don't go
+         * through, leaving the display on the vanilla default of {@link Billboard#FIXED}. Reapply while
+         * rendering so the text faces the viewer like a nameplate.
+         */
+        protected void applyBillboard(TextDisplay disp) {
+            Billboard billboard = dt.getBillboard() == null ? Billboard.CENTER : dt.getBillboard();
+            if (disp.getBillboard() != billboard) {
+                disp.setBillboard(billboard);
+            }
+        }
+
         @Override
         public void render0(NPC base, Vector3d offset) {
             TextDisplay disp = (TextDisplay) hologram.getEntity();
+            applyBillboard(disp);
             if (SpigotUtil.getVersion()[1] >= 21 && base.getEntity() instanceof LivingEntity) {
                 AttributeInstance inst = ((LivingEntity) base.getEntity())
                         .getAttribute(SpigotUtil.getRegistryValue(Registry.ATTRIBUTE, "generic.scale", "scale"));
@@ -1094,8 +1107,13 @@ public class HologramTrait extends Trait {
                 }
             }
             Transformation tf = disp.getTransformation();
-            tf.getTranslation().y = (float) offset.y + 0.2f;
+            // the display rides at the NPC's passenger attachment point, which sits inside the model - lift it
+            // to the same height the non-vehicle renderer uses. Both values scale with the scale attribute.
+            float aboveRider = (float) NMS.getBoundingBoxHeight(npc.getEntity())
+                    - NMS.getRidingHeightOffset(npc.getEntity(), hologram.getEntity());
+            tf.getTranslation().y = (float) offset.y + 0.2f + Math.max(0, aboveRider);
             disp.setTransformation(tf);
+            applyBillboard(disp);
             if (hologram.getEntity().getVehicle() == null) {
                 NMS.mount(npc.getEntity(), hologram.getEntity());
             }
