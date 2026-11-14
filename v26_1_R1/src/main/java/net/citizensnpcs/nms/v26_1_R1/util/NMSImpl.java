@@ -311,6 +311,7 @@ import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import net.minecraft.network.protocol.game.VecDeltaCodec;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -1472,6 +1473,25 @@ public class NMSImpl implements NMSBridge {
     @Override
     public void sendComponent(Player player, Object component) {
         ((ServerPlayer) getHandle(player)).sendSystemMessage((Component) component);
+    }
+
+    @Override
+    public void resendMetadata(Player to, org.bukkit.entity.Entity entity) {
+        Entity handle = getHandle(entity);
+        if (handle == null)
+            return;
+        List<SynchedEntityData.DataValue<?>> values = handle.getEntityData().getNonDefaultValues();
+        if (values == null || values.isEmpty())
+            return;
+        sendPacket(to, new ClientboundSetEntityDataPacket(handle.getId(), values));
+    }
+
+    @Override
+    public void sendPassengers(Player to, org.bukkit.entity.Entity vehicle) {
+        Entity handle = getHandle(vehicle);
+        if (handle == null)
+            return;
+        sendPacket(to, new ClientboundSetPassengersPacket(handle));
     }
 
     @Override

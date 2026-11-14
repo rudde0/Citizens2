@@ -19,6 +19,7 @@ import net.citizensnpcs.util.PlayerUpdateTask;
 
 @TraitName("packet")
 public class PacketNPC extends Trait {
+    private int lastVehicleId = -1;
     private EntityPacketTracker packetTracker;
     private boolean spawned = false;
 
@@ -53,10 +54,23 @@ public class PacketNPC extends Trait {
         if (!spawned)
             return;
         PerPlayerMetadata<Boolean> ppm = CitizensAPI.getLocationLookup().registerMetadata("packetnpc", null);
+        Entity vehicle = npc.getEntity() == null ? null : npc.getEntity().getVehicle();
+        int vehicleId = vehicle == null ? -1 : vehicle.getEntityId();
+        // the vehicle sends its passenger list from its own tracker, which happens before this entity
+        // exists clientside - the client drops the mount, so resend it after linking and on any change
+        boolean vehicleChanged = vehicleId != lastVehicleId;
+        lastVehicleId = vehicleId;
         for (Player nearby : CitizensAPI.getLocationLookup().getNearbyPlayers(npc)) {
-            if (!ppm.has(nearby.getUniqueId(), npc.getUniqueId().toString())) {
+            boolean linked = ppm.has(nearby.getUniqueId(), npc.getUniqueId().toString());
+            if (!linked) {
                 packetTracker.link(nearby);
                 ppm.set(nearby.getUniqueId(), npc.getUniqueId().toString(), true);
+                // metadata set before the player linked (display billboard, transformation, ...) isn't part of
+                // what the client ends up with, so push the current state again now that it can receive it
+                NMS.resendMetadata(nearby, npc.getEntity());
+            }
+            if (vehicle != null && (!linked || vehicleChanged)) {
+                NMS.sendPassengers(nearby, vehicle);
             }
         }
         packetTracker.run();

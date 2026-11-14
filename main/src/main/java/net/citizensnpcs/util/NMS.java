@@ -867,6 +867,14 @@ public class NMS {
         BRIDGE.sendComponent(player, component);
     }
 
+    public static void resendMetadata(Player to, Entity entity) {
+        BRIDGE.resendMetadata(to, entity);
+    }
+
+    public static void sendPassengers(Player to, Entity vehicle) {
+        BRIDGE.sendPassengers(to, vehicle);
+    }
+
     public static void sendRotationPacket(Entity from, Iterable<Player> to) {
         sendRotationPacket(from, to, null, null, null);
     }

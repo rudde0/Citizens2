@@ -196,6 +196,12 @@ public interface NMSBridge {
 
     public void sendComponent(Player player, Object component);
 
+    public default void resendMetadata(Player to, Entity entity) {
+    }
+
+    public default void sendPassengers(Player to, Entity vehicle) {
+    }
+
     public void sendPositionUpdate(Entity from, Iterable<Player> to, boolean position, Float bodyYaw, Float pitch,
             Float headYaw);
 
