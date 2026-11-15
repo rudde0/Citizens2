@@ -2,6 +2,16 @@
 
 Son güncelleme: 2026-08-01 · Hedef: **Minecraft 26.1.2**
 
+> **15 Kasım 2026, `projects-engine` dalı: bu dosyadaki "yalnız 26.1.2" kararının yerini aldı.** Tek jar hem
+> zephyr'ı (26.1.2) hem Aurora'yı (26.2) desteklesin diye `v26_2_R1` modülü yeniden derlemede (`pom.xml` ve
+> `dist/pom.xml`, `spigot-release` profili), `main/pom.xml` → `craftbukkit.version` yine upstream'deki gibi
+> `26.2-R0.1-SNAPSHOT` ve `SulfurCubeTrait.java` geri geldi (`v26_2_R1`'in `NMSImpl`'i onu kaydediyor; upstream da
+> `main`'i 26.2'ye karşı derleyip 26.1'de çalıştırıyor). Yalnız `v1_21_R7` dışarıda kaldı (1.21.11 remapped jar'ı
+> `~/.m2`'de yok). İki Spigot jar'ı da (`26.1.2-R0.1-SNAPSHOT`, `26.2-R0.1-SNAPSHOT`) BuildTools ile kurulmuş durumda.
+> Komut aynı, `-o` ile (CitizensAPI uzak snapshot'tan geliyor, çevrimdışı derleme aynı snapshot'ı kullanır):
+> `mvn -o -B clean package -DskipTests -Dmaven.javadoc.skip=true -DBUILD_NUMBER=engine` → `dist/target/Citizens-2.0.43-bengine.jar`.
+> Aşağıdaki "yerel pom değişikliği" bölümü `master` için geçerli tarihçedir.
+
 ## Hızlı komut
 
 ```bash
