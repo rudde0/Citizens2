@@ -379,7 +379,12 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         } else {
             detectEquipmentUpdatesPublic();
         }
+        // projects.gg fork: onEffectsRemoved also sets effectsDirty, and a dirty flag every tick made vanilla rebuild
+        // the effect particle list and resend it to every viewer every tick while any effect is active (the
+        // particle options have no equals). Keep the flag as it was; real effect changes still set it.
+        boolean effectsWereDirty = effectsDirty;
         onEffectsRemoved(List.of()); // calls refreshDirtyAttributes
+        effectsDirty = effectsWereDirty;
         Bukkit.getServer().getPluginManager().unsubscribeFromPermission("bukkit.broadcast.user", getBukkitEntity());
         updatePackets(npc.getNavigator().isNavigating());
         npc.update();
