@@ -1076,6 +1076,12 @@ public class HologramTrait extends Trait {
          * per-NPC hologram cost (many mob NPCs with static or script-driven text).
          */
         private String lastRendered;
+        /**
+         * The display entity {@link #lastRendered} went to. TextDisplayController applies the component on its next
+         * tick and removes it from the NPC's data, so "the data still has it" was almost never true and the cache
+         * never hit; the text stays on that entity instead, so compare the entity.
+         */
+        private Entity lastRenderedOn;
 
         @Override
         public void updateText(NPC npc, String raw) {
@@ -1083,10 +1089,11 @@ public class HologramTrait extends Trait {
             if (hologram == null)
                 return;
             String rendered = Placeholders.replace(text, null, npc);
-            if (rendered != null && rendered.equals(lastRendered)
-                    && hologram.data().has(NPC.Metadata.TEXT_DISPLAY_COMPONENT))
+            Entity current = hologram.getEntity();
+            if (rendered != null && rendered.equals(lastRendered) && current != null && current == lastRenderedOn)
                 return;
             lastRendered = rendered;
+            lastRenderedOn = current;
             hologram.data().set(NPC.Metadata.TEXT_DISPLAY_COMPONENT,
                     Messaging.minecraftComponentFromRawMessage(rendered));
         }
