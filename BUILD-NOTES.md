@@ -11,6 +11,13 @@ Son güncelleme: 2026-08-01 · Hedef: **Minecraft 26.1.2**
 > Komut aynı, `-o` ile (CitizensAPI uzak snapshot'tan geliyor, çevrimdışı derleme aynı snapshot'ı kullanır):
 > `mvn -o -B clean package -DskipTests -Dmaven.javadoc.skip=true -DBUILD_NUMBER=engine` → `dist/target/Citizens-2.0.43-bengine.jar`.
 > Aşağıdaki "yerel pom değişikliği" bölümü `master` için geçerli tarihçedir.
+>
+> Bu jar 15 Kasım'da iki sürümde de çalıştırıldı: Paper 26.1.2 (regensrv, `v26_1_R1` yüklendi) ve Paper 26.2
+> (`D:\ProLauncher-build\tmp\pme-262`, `v26_2_R1` yüklendi). Jar'a gömülen CitizensAPI yerel `CitizensAPI` deposundan
+> değil, `~/.m2`'deki upstream snapshot'ından gelir (`citizensapi-2.0.43-20260911.173826-10`, 30 Ekim'de indirilmiş);
+> 1 Ağustos jar'larındaki API'den farkı: `ColorPersister` eklendi, `DataKey.getIntegerSubKeys` sayısal sıralıyor,
+> `Equipment` `SULFUR_CUBE`'u tanıyor, `YamlStorage` ve `SpigotUtil`'de küçük değişiklikler. `-o` olmadan derlenirse
+> Maven daha yeni bir API snapshot'ı çekebilir; jar'ı aynı tutmak için `-o` kullan.
 
 ## Hızlı komut
 
@@ -106,6 +113,7 @@ Ardından build almak için önce BuildTools ile `26.2` ve `1.21.11 --remapped` 
 |---|---|
 | `Citizens.java` | PacketEvents API'si başka plugin tarafından kurulduysa üzerine yazılmıyor ve kapanışta `terminate()` edilmiyor |
 | `PacketEventsHook.java` | Hologram metadata paketleri için per-packet dünya+registry lookup yerine spawn/despawn ile beslenen map; `disguiseTraitsUUID` remove bug'ı |
+| `PacketEventsHook.java` (`minimessage`, 15 Kasım, `316fee392`) | Tembel MiniMessage araması Netty thread'leri arasında güvenli: son yazılan alan (`DESERIALIZE_METHOD`, `volatile`) sınanıyor. Eskiden iki oyuncu aynı anda hologram metadata'sı alınca açılış başına bir `NullPointerException` çıkıyor, o paketin oyuncuya özel metni uygulanmıyordu (upstream hatası) |
 | `NMSBridge.java`, `NMS.java`, `NMSImpl.java`, `PacketNPC.java` | Packet NPC mount fix: link sonrası ve vehicle değişiminde `ClientboundSetPassengersPacket` yeniden gönderiliyor (aşağıya bak) |
 | `HologramTrait.java` (`TextDisplayVehicleRenderer.render0`) | Mount yüksekliği passenger attachment noktasına göre düzeltildi (NPC içine gömülmüyor, scale attribute ile ölçekleniyor) + billboard her render'da yeniden uygulanıyor (varsayılan `CENTER`) |
 
