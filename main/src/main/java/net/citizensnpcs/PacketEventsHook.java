@@ -74,7 +74,7 @@ import net.citizensnpcs.util.SkinProperty;
 import net.citizensnpcs.util.Util;
 
 public class PacketEventsHook implements Listener {
-    private MethodHandle DESERIALIZE_METHOD;
+    private volatile MethodHandle DESERIALIZE_METHOD;
     private final Map<Integer, DisguiseTrait> disguiseTraits = Maps.newConcurrentMap();
     private final Map<UUID, DisguiseTrait> disguiseTraitsUUID = Maps.newConcurrentMap();
     private final Map<Integer, NPC> hologramNPCs = Maps.newConcurrentMap();
@@ -458,12 +458,15 @@ public class PacketEventsHook implements Listener {
     }
 
     private Object minimessage(String raw) {
-        if (MINIMESSAGE == null) {
+        // Called from the Netty threads of several players at once: test the field that is written last
+        // (volatile), so no thread can see MINIMESSAGE set while DESERIALIZE_METHOD is still null.
+        if (DESERIALIZE_METHOD == null) {
             try {
-                MINIMESSAGE = NMS.getMethodHandle(
+                Object mm = NMS.getMethodHandle(
                         Class.forName("net{}kyori{}adventure.text.minimessage.MiniMessage".replace("{}", ".")),
                         "miniMessage", true).invoke();
-                DESERIALIZE_METHOD = NMS.getMethodHandle(MINIMESSAGE.getClass(), "deserialize", true, String.class);
+                MINIMESSAGE = mm;
+                DESERIALIZE_METHOD = NMS.getMethodHandle(mm.getClass(), "deserialize", true, String.class);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
