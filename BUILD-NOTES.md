@@ -2,6 +2,17 @@
 
 Son güncelleme: 2026-08-01 · Hedef: **Minecraft 26.1.2**
 
+> **21 November 2026, `projects-engine`: 26.3 support.** `upstream/master` (with the new `v26_3_R1` module, version
+> `2.0.44-SNAPSHOT`) was merged in; our patches were kept (backup branch `backup/projects-engine-pre-26.3`). Upstream
+> dropped `v1_21_R7` from the default profile; `main` now compiles against `26.3-R0.1-SNAPSHOT`. The packet NPC
+> `resendMetadata`/`sendPassengers` overrides are now in `v26_1_R1`, `v26_2_R1` and `v26_3_R1` NMSImpl. One jar holds
+> all three modules, so the build needs three BuildTools Spigot jars in `~/.m2` (`--rev 26.1.2`, `26.2`, `26.3`).
+> Run BuildTools one at a time: parallel runs share `~/.m2` and fail on `*.lastUpdated (Access is denied)`.
+> Build online (no `-o`) on a fresh `~/.m2`, since the CitizensAPI snapshot is downloaded:
+> `mvn -B clean package -DskipTests -Dmaven.javadoc.skip=true -DBUILD_NUMBER=engine` → `dist/target/Citizens-2.0.44-bengine.jar`.
+> Smoke test, 21 Nov: Paper 26.3-257 in a throwaway folder loaded it, created a player NPC, a zombie NPC and a
+> hologram line with no exception. Not yet run on 26.1.2 / 26.2 Paper after this merge.
+>
 > **15 Kasım 2026, `projects-engine` dalı: bu dosyadaki "yalnız 26.1.2" kararının yerini aldı.** Tek jar hem
 > zephyr'ı (26.1.2) hem Aurora'yı (26.2) desteklesin diye `v26_2_R1` modülü yeniden derlemede (`pom.xml` ve
 > `dist/pom.xml`, `spigot-release` profili), `main/pom.xml` → `craftbukkit.version` yine upstream'deki gibi
