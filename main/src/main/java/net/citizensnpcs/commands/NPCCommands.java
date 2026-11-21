@@ -1041,6 +1041,8 @@ public class NPCCommands {
         } else if (args.hasFlag('i')) {
             if (!(sender instanceof Player))
                 throw new CommandException(CommandMessages.MUST_BE_INGAME);
+            if (((Player) sender).getItemInHand() == null)
+                throw new CommandException(Messages.NPC_DEBUG_NO_ITEM_IN_HAND);
 
             Messaging.send(sender, NMS.getComponentMap(((Player) sender).getItemInHand()));
         }
@@ -1429,7 +1431,7 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
-            usage = "hologram add [text] (--duration [duration]) | insert [line #] [text] | set [line #] [text] | remove [line #] | edit_npc [template | name | line #] | clear | lineheight [height] | verticalviewrange [range] | viewrange [range] | margintop [line #] [margin] | marginbottom [line #] [margin] | bgcolor [line #] [color]",
+            usage = "hologram add [text] (--duration [duration]) | insert [line #] [text] | set [line #] [text] | remove [line #] | edit_npc [template | name | line #] | clear | updaterate [ticks] | lineheight [height] | verticalviewrange [range] | viewrange [range] | margintop [line #] [margin] | marginbottom [line #] [margin] | bgcolor [line #] [color]",
             desc = "",
             modifiers = { "hologram" },
             min = 1,
@@ -1439,7 +1441,7 @@ public class NPCCommands {
             @Arg(
                     value = 1,
                     completions = { "add", "insert", "set", "edit_npc", "remove", "clear", "lineheight", "viewrange",
-                            "verticalviewrange", "bgcolor", "margintop", "marginbottom" }) String action,
+                            "updaterate", "verticalviewrange", "bgcolor", "margintop", "marginbottom" }) String action,
             @Arg(value = 2, completionsProvider = HologramTrait.TabCompletions.class) String secondCompletion,
             @Flag("duration") Duration duration) throws CommandException {
         if (npc.hasTrait(ClickRedirectTrait.class)) {
@@ -1492,10 +1494,11 @@ public class NPCCommands {
             }
             if (hr != null && hr.getTemplateNPC() != null) {
                 if (hr.getTemplateNPC().getOrAddTrait(MobType.class).getType() != EntityType.TEXT_DISPLAY)
-                    throw new CommandException();
+                    throw new CommandException("Please use the text display renderer instead of "
+                            + hr.getTemplateNPC().getOrAddTrait(MobType.class).getType());
                 hr.getTemplateNPC().getOrAddTrait(TextDisplayTrait.class)
                         .setBackgroundColor(SpigotUtil.parseColor(args.getString(3)));
-                Messaging.sendTr(sender, Messages.HOLOGRAM_BACKGROUND_COLOR_SET,
+                Messaging.sendTr(sender, Messages.HOLOGRAM_BACKGROUND_COLOR_SET, args.getString(2),
                         SpigotUtil.parseColor(args.getString(3)));
             }
         } else if (action.equalsIgnoreCase("edit_npc")) {
@@ -1527,6 +1530,12 @@ public class NPCCommands {
 
             trait.setViewRange(args.getInteger(2));
             Messaging.sendTr(sender, Messages.HOLOGRAM_VIEW_RANGE_SET, npc.getName(), args.getInteger(2));
+        } else if (action.equalsIgnoreCase("updaterate")) {
+            if (args.argsLength() == 2 || args.getTicks(2) < 0)
+                throw new CommandUsageException();
+
+            trait.setUpdateRate(args.getTicks(2));
+            Messaging.sendTr(sender, Messages.HOLOGRAM_UPDATE_RATE_SET, npc.getName(), args.getTicks(2));
         } else if (action.equalsIgnoreCase("verticalviewrange")) {
             if (args.argsLength() == 2)
                 throw new CommandUsageException();
@@ -2325,6 +2334,23 @@ public class NPCCommands {
         npc.data().setPersistent(NPC.Metadata.NAMEPLATE_VISIBLE, old);
         npc.scheduleUpdate(NPCUpdate.PACKET);
         Messaging.sendTr(sender, Messages.NAMEPLATE_VISIBILITY_SET, old);
+    }
+
+    @Command(
+            aliases = { "npc" },
+            usage = "nophysics (--explicit true|false)",
+            desc = "",
+            modifiers = { "nophysics" },
+            min = 1,
+            max = 1,
+            permission = "citizens.npc.nophysics")
+    public void nophysics(CommandContext args, CommandSender sender, NPC npc, @Flag("explicit") Boolean explicit) {
+        boolean phys = !npc.data().get(NPC.Metadata.NO_PHYSICS, false);
+        if (explicit != null) {
+            phys = explicit;
+        }
+        npc.data().set(NPC.Metadata.NO_PHYSICS, phys);
+        Messaging.sendTr(sender, phys ? Messages.NO_PHYSICS_SET : Messages.NO_PHYSICS_UNSET, npc.getName());
     }
 
     @Command(aliases = { "npc" }, desc = "", max = 0, permission = "citizens.npc.info")
@@ -3626,8 +3652,11 @@ public class NPCCommands {
             min = 1,
             max = 2,
             permission = "citizens.npc.slimesize")
-    @Requirements(selected = true, ownership = true, cosmeticTypes = { EntityType.MAGMA_CUBE, EntityType.SLIME })
-    public void slimeSize(CommandContext args, CommandSender sender, NPC npc) {
+    @Requirements(selected = true, ownership = true)
+    public void slimeSize(CommandContext args, CommandSender sender, NPC npc) throws RequirementMissingException {
+        EntityType type = npc.getCosmeticEntityType();
+        if (type != EntityType.MAGMA_CUBE && type != EntityType.SLIME && !type.name().equals("SULFUR_CUBE"))
+            throw new RequirementMissingException(Messaging.tr(CommandMessages.REQUIREMENTS_INVALID_MOB_TYPE));
         SlimeSize trait = npc.getOrAddTrait(SlimeSize.class);
         if (args.argsLength() <= 1) {
             trait.describe(sender);

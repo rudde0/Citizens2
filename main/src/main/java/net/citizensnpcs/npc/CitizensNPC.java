@@ -275,7 +275,7 @@ public class CitizensNPC extends AbstractNPC {
                 hr.updateText(this, getRawName());
             }
         }
-        updateCustomName();
+        updateCustomNameVisibility();
     }
 
     @Override
@@ -478,7 +478,7 @@ public class CitizensNPC extends AbstractNPC {
             int max = Setting.CHAT_MAX_NUMBER_OF_TARGETS.asInt();
             String[] format = Setting.CHAT_MULTIPLE_TARGETS_FORMAT.asString().split("\\|");
             if (format.length != 4) {
-                Messaging.severe("npc.chat.options.multiple-targets-format invalid!");
+                Messaging.severe("Invalid chat format for multiple targets!");
             }
             if (max == 1) {
                 targets = format[0].replace("<target>", targetNames.get(0)) + format[3];
@@ -522,7 +522,7 @@ public class CitizensNPC extends AbstractNPC {
         }
         Location npcLoc = getEntity().getLocation();
         if (isSpawned() && npcLoc.getWorld() == location.getWorld()) {
-            if (npcLoc.distance(location) < 1) {
+            if (npcLoc.distance(location) < 2) {
                 NMS.setHeadAndBodyYaw(getEntity(), location.getYaw());
             }
             if (getEntity().getType() == EntityType.PLAYER && !getEntity().isInsideVehicle()
@@ -552,6 +552,10 @@ public class CitizensNPC extends AbstractNPC {
                 return;
 
             Location loc = getEntity().getLocation();
+            if (loc.getY() < -100000) {
+                loc.setY(-100000);
+                getEntity().teleport(loc);
+            }
             if (data().has(NPC.Metadata.ACTIVATION_RANGE)) {
                 int range = data().get(NPC.Metadata.ACTIVATION_RANGE);
                 if (range == -1 || plugin.getLocationLookup().getNearbyPlayers(loc, range).iterator().hasNext()) {
@@ -581,6 +585,9 @@ public class CitizensNPC extends AbstractNPC {
             }
             if (SUPPORT_SILENT && data().has(NPC.Metadata.SILENT)) {
                 getEntity().setSilent(data().get(NPC.Metadata.SILENT, false));
+            }
+            if (data().has(NPC.Metadata.NO_PHYSICS)) {
+                NMS.setNoPhysics(getEntity(), data().<Boolean> get(NPC.Metadata.NO_PHYSICS));
             }
             if (data().has(NPC.Metadata.AGGRESSIVE)) {
                 NMS.setAggressive(getEntity(), data().get(NPC.Metadata.AGGRESSIVE, false));
@@ -620,6 +627,10 @@ public class CitizensNPC extends AbstractNPC {
     private void updateCustomName() {
         if (getEntity() == null)
             return;
+        if (getName().isEmpty()) {
+            getEntity().setCustomName(null);
+            return;
+        }
         if (coloredNameComponentCache != null) {
             NMS.setCustomName(getEntity(), coloredNameComponentCache, coloredNameStringCache);
         } else {
@@ -631,7 +642,7 @@ public class CitizensNPC extends AbstractNPC {
         if (!isSpawned())
             return;
         String nameplateVisible = data().<Object> get(NPC.Metadata.NAMEPLATE_VISIBLE, true).toString();
-        if (requiresNameHologram()) {
+        if (requiresNameHologram() || getName().isEmpty()) {
             nameplateVisible = "false";
         }
         if (nameplateVisible.equals("true") || nameplateVisible.equals("hover")) {
@@ -684,25 +695,19 @@ public class CitizensNPC extends AbstractNPC {
     }
 
     private static void talkToBystanders(NPC npc, String text, SpeechContext context) {
-        // Get list of nearby entities
         List<Entity> bystanderEntities = npc.getEntity().getNearbyEntities(Setting.CHAT_RANGE.asDouble(),
                 Setting.CHAT_RANGE.asDouble(), Setting.CHAT_RANGE.asDouble());
-        for (Entity bystander : bystanderEntities) {
-            boolean shouldTalk = true;
-            if (!Setting.TALK_CLOSE_TO_NPCS.asBoolean() && CitizensAPI.getNPCRegistry().isNPC(bystander)) {
-                shouldTalk = false;
-            }
+        outer: for (Entity bystander : bystanderEntities) {
+            if (!Setting.TALK_CLOSE_TO_NPCS.asBoolean() && CitizensAPI.getNPCRegistry().isNPC(bystander))
+                continue;
+
             if (context.hasRecipients()) {
                 for (Talkable target : context) {
-                    if (target.getEntity().equals(bystander)) {
-                        shouldTalk = false;
-                        break;
-                    }
+                    if (target.getEntity().equals(bystander))
+                        continue outer;
                 }
             }
-            if (shouldTalk) {
-                new TalkableEntity(bystander).talkNear(context, text);
-            }
+            new TalkableEntity(bystander).talkNear(context, text);
         }
     }
 

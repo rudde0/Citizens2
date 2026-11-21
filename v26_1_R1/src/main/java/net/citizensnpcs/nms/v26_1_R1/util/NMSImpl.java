@@ -254,6 +254,7 @@ import net.citizensnpcs.trait.versioned.EnderDragonTrait;
 import net.citizensnpcs.trait.versioned.FoxTrait;
 import net.citizensnpcs.trait.versioned.FrogTrait;
 import net.citizensnpcs.trait.versioned.GoatTrait;
+import net.citizensnpcs.trait.versioned.InteractionTrait;
 import net.citizensnpcs.trait.versioned.ItemDisplayTrait;
 import net.citizensnpcs.trait.versioned.LlamaTrait;
 import net.citizensnpcs.trait.versioned.MannequinTrait;
@@ -1066,6 +1067,7 @@ public class NMSImpl implements NMSBridge {
         registerTraitWithCommand(manager, SpellcasterTrait.class);
         registerTraitWithCommand(manager, ShulkerTrait.class);
         registerTraitWithCommand(manager, VexTrait.class);
+        registerTraitWithCommand(manager, InteractionTrait.class);
         registerTraitWithCommand(manager, SnowmanTrait.class);
         registerTraitWithCommand(manager, TextDisplayTrait.class);
         registerTraitWithCommand(manager, TropicalFishTrait.class);
@@ -1745,6 +1747,11 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
+    public void setNoPhysics(org.bukkit.entity.Entity entity, boolean nophysics) {
+        getHandle(entity).noPhysics = nophysics;
+    }
+
+    @Override
     public void setOpWithoutSaving(Player player, boolean op) {
         if (player.isOp() == op)
             return;
@@ -2336,6 +2343,15 @@ public class NMSImpl implements NMSBridge {
         return null;
     }
 
+    public static org.bukkit.entity.Entity getBukkitEntity(Entity entity) {
+        try {
+            return (org.bukkit.entity.Entity) BUKKITENTITY_GETTER.invoke(entity);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     private static BlockState getHandle(org.bukkit.block.Block block) {
         try {
             return (BlockState) GET_BLOCK_STATE.invoke(block);
@@ -2466,7 +2482,7 @@ public class NMSImpl implements NMSBridge {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-    };
+    }
 
     public static void minecartItemLogic(AbstractMinecart minecart) {
         NPC npc = ((NPCHolder) minecart).getNPC();
@@ -2481,10 +2497,10 @@ public class NMSImpl implements NMSBridge {
             minecart.setCustomDisplayBlockState(Optional.empty());
         }
         minecart.setDisplayOffset(offset);
-    }
+    };
 
     public static boolean moveFish(NPC npc, Mob handle, Vec3 vec3d) {
-        if (npc == null || npc.useMinecraftAI())
+        if (npc.useMinecraftAI())
             return false;
         if (handle.isInWater() && !npc.getNavigator().isNavigating()) {
             handle.moveRelative(handle instanceof Dolphin || handle instanceof Axolotl ? handle.getSpeed()
@@ -2948,6 +2964,7 @@ public class NMSImpl implements NMSBridge {
     private static final MethodHandle ARMADILLO_SCUTE_TIME = NMS.getSetter(Armadillo.class, "scuteTime");
 
     private static final MethodHandle ATTRIBUTE_PROVIDER_MAP = NMS.getFirstGetter(AttributeSupplier.class, Map.class);
+
     private static final MethodHandle ATTRIBUTE_PROVIDER_MAP_SETTER = NMS.getFirstFinalSetter(AttributeSupplier.class,
             Map.class);
     private static final MethodHandle ATTRIBUTE_SUPPLIER = NMS.getFirstGetter(AttributeMap.class,
@@ -2961,10 +2978,11 @@ public class NMSImpl implements NMSBridge {
     private static final MethodHandle BRAIN_SENSORS_GETTER = NMS.getGetter(Brain.class, "sensors");
     private static final MethodHandle BRAIN_SETTER = NMS.getFirstSetter(LivingEntity.class, Brain.class);
     private static final MethodHandle BUKKITENTITY_FIELD_SETTER = NMS.getSetter(Entity.class, "bukkitEntity");
+    private static final MethodHandle BUKKITENTITY_GETTER = NMS.getGetter(Entity.class, "bukkitEntity");
     private static final MethodHandle CHUNKMAP_UPDATE_PLAYER_STATUS = NMS.getMethodHandle(ChunkMap.class,
             "updatePlayerStatus", true, ServerPlayer.class, boolean.class);
     private static final MethodHandle CLIENT_LOADED_TIMEOUT_TIMER = NMS.getSetter(ServerGamePacketListenerImpl.class,
-            "clientLoadedTimeoutTimer");
+            "clientLoadedTimeoutTimer", false);
     public static final MethodHandle CONNECTION_DISCONNECT_LISTENER = NMS.getSetter(Connection.class,
             "disconnectListener");
     public static final MethodHandle CONNECTION_PACKET_LISTENER = NMS.getSetter(Connection.class, "packetListener");

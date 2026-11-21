@@ -99,14 +99,14 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
     @Override
     public boolean causeFallDamage(double f, float f1, DamageSource damagesource) {
-        if (npc == null || !npc.isFlyable())
+        if (npc == null || !npc.isFlyable() || npc.useMinecraftAI())
             return super.causeFallDamage(f, f1, damagesource);
         return false;
     }
 
     @Override
     protected void checkFallDamage(double d0, boolean flag, BlockState iblockdata, BlockPos blockposition) {
-        if (npc == null || !npc.isFlyable()) {
+        if (npc == null || !npc.isFlyable() || npc.useMinecraftAI()) {
             super.checkFallDamage(d0, flag, iblockdata, blockposition);
         }
     }
@@ -117,7 +117,6 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
         // NPC dies, we are done with the instance and it should be removed.
         if (dead)
             return;
-
         super.die(damagesource);
         CitizensAPI.getScheduler().runEntityTaskLater(EntityHumanNPC.this.getBukkitEntity(), () -> {
             level().removePlayerImmediately(EntityHumanNPC.this, RemovalReason.KILLED);
@@ -277,6 +276,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
             EmptyConnection conn = new EmptyConnection(PacketFlow.CLIENTBOUND);
             connection = new EmptyPacketListener(minecraftServer, conn, this,
                     CommonListenerCookie.createInitial(gameProfile(), false));
+            conn.setListenerForServerboundHandshake(connection);
             advancements = new EmptyAdvancementDataPlayer(minecraftServer.getFixerUpper(),
                     minecraftServer.getPlayerList(), this);
             // paper now inserts a brand name field
@@ -337,10 +337,17 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
     @Override
     public boolean onClimbable() {
-        if (npc == null || !npc.isFlyable())
+        if (npc == null || !npc.isFlyable() || npc.useMinecraftAI())
             return super.onClimbable();
         else
             return false;
+    }
+
+    @Override
+    public void onRemoval(RemovalReason reason) {
+        // hooked here rather than in remove() because chunk unloads call setRemoved directly
+        NMSImpl.removeRegionConnection(this);
+        super.onRemoval(reason);
     }
 
     @Override
@@ -416,7 +423,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
     @Override
     public void travel(Vec3 vec3d) {
-        if (npc == null || !npc.isFlyable()) {
+        if (npc == null || !npc.isFlyable() || npc.useMinecraftAI()) {
             super.travel(vec3d);
         } else {
             NMSImpl.moveLogic(this, vec3d);

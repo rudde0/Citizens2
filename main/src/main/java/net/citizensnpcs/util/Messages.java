@@ -184,6 +184,7 @@ public class Messages {
     public static final String HOLOGRAM_RENDERER_SELECTED = "citizens.commands.npc.hologram.renderer-selected";
     public static final String HOLOGRAM_TEXT_MISSING = "citizens.commands.npc.hologram.text-missing";
     public static final String HOLOGRAM_TEXT_REMOVED = "citizens.commands.npc.hologram.text-removed";
+    public static final String HOLOGRAM_UPDATE_RATE_SET = "citizens.commands.npc.hologram.update-rate-set";
     public static final String HOLOGRAM_VERTICAL_VIEW_RANGE_SET = "citizens.commands.npc.hologram.vertical-view-range-set";
     public static final String HOLOGRAM_VIEW_RANGE_SET = "citizens.commands.npc.hologram.view-range-set";
     public static final String HOME_TRAIT_DELAY_SET = "citizens.commands.npc.home.delay-set";
@@ -295,6 +296,8 @@ public class Messages {
     public static final String MUSHROOM_COW_VARIANT_SET = "citizens.commands.npc.mushroomcow.variant-set";
     public static final String NAMEPLATE_VISIBILITY_SET = "citizens.commands.npc.nameplate.set";
     public static final String NO_NPC_WITH_ID_FOUND = "citizens.commands.npc.spawn.missing-npc-id";
+    public static final String NO_PHYSICS_SET = "citizens.commands.npc.nophysics.set";
+    public static final String NO_PHYSICS_UNSET = "citizens.commands.npc.nophysics.unset";
     public static final String NO_STORED_SPAWN_LOCATION = "citizens.commands.npc.spawn.no-location";
     public static final String NOT_USING_MINECRAFT_AI = "citizens.commands.npc.ai.stopped";
     public static final String NPC_ALREADY_SELECTED = "citizens.commands.npc.select.already-selected";
@@ -310,6 +313,7 @@ public class Messages {
     public static final String NPC_COPIED = "citizens.commands.npc.copy.copied";
     public static final String NPC_CREATE_INVALID_MOBTYPE = "citizens.commands.npc.create.invalid-mobtype";
     public static final String NPC_CREATE_MISSING_MOBTYPE = "citizens.commands.npc.create.mobtype-missing";
+    public static final String NPC_DEBUG_NO_ITEM_IN_HAND = "citizens.commands.npc.debug.no-item-in-hand";
     public static final String NPC_DESPAWNED = "citizens.commands.npc.despawn.despawned";
     public static final String NPC_NAME_TOO_LONG = "citizens.commands.npc.create.npc-name-too-long";
     public static final String NPC_NOT_CONTROLLABLE = "citizens.commands.npc.controllable.not-controllable";

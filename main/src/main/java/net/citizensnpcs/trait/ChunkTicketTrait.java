@@ -27,7 +27,7 @@ public class ChunkTicketTrait extends Trait {
             return;
         if (active != null) {
             if (ticks < 0) {
-                active.getChunk().setForceLoaded(false);
+                active.setForceLoaded(false);
             }
             active.getChunk().removePluginChunkTicket(CitizensAPI.getPlugin());
             active = null;
@@ -50,18 +50,17 @@ public class ChunkTicketTrait extends Trait {
         }
         // https://github.com/PaperMC/Paper/issues/9581
         // XXX: can be removed if support for <=1.21.8 is dropped
-        if (ticks >= 0 && SpigotUtil.getVersion()[1] <= 21
-                && (SpigotUtil.getVersion().length < 3 || SpigotUtil.getVersion()[2] <= 8)
+        if (ticks >= 0 && SpigotUtil.getVersion()[0] <= 21 && SpigotUtil.getVersion()[1] <= 8
                 && timeout < System.currentTimeMillis()) {
             ticks = 2;
         }
         if (ticks != 0) {
             Chunk chunk = npc.getEntity().getLocation().getChunk();
             chunk.addPluginChunkTicket(CitizensAPI.getPlugin());
-            if (ticks == -1) {
-                chunk.setForceLoaded(true);
-            }
             active = new ChunkCoord(chunk);
+            if (ticks == -1) {
+                active.setForceLoaded(true);
+            }
         }
     }
 
@@ -90,13 +89,13 @@ public class ChunkTicketTrait extends Trait {
             chunk.addPluginChunkTicket(plugin);
             if (ticks < 0) {
                 active.setForceLoaded(false);
-                chunk.setForceLoaded(true);
+                next.setForceLoaded(true);
             }
             active = next;
         } else if (!chunk.getPluginChunkTickets().contains(plugin)) {
             chunk.addPluginChunkTicket(plugin);
             if (ticks < 0) {
-                chunk.setForceLoaded(true);
+                active.setForceLoaded(true);
             }
         }
     }

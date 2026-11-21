@@ -263,6 +263,8 @@ public interface NMSBridge {
 
     public void setNoGravity(Entity entity, boolean nogravity);
 
+    public void setNoPhysics(Entity entity, boolean nophysics);
+
     public void setOpWithoutSaving(Player player, boolean op);
 
     public default void setPandaSitting(Entity entity, boolean sitting) {
